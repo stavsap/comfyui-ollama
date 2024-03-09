@@ -1,4 +1,5 @@
 import ollama
+from ollama import Client
 
 class OllamaVision:
     """
@@ -83,7 +84,8 @@ class OllamaVision:
                 model: {model}
             """)
         #do some processing on the image, in this example I just invert it
-        response = ollama.chat(model=model, messages=[
+        client = Client(host=url)
+        response = client.chat(model=model, messages=[
           {
             'role': 'user',
             'content': query,
