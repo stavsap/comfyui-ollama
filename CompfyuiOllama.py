@@ -79,6 +79,7 @@ class OllamaVision:
     def vision(self, image, query, debug, url, model):
         if debug == "enable":
             print(f"""Your input contains:
+                image: {image}
                 query: {query}
                 url: {url}
                 model: {model}
