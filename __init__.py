@@ -7,15 +7,22 @@ import threading
 import locale
 import traceback
 
-def process_wrap(cmd_str, cwd=None, handler=None):
+def handle_stream(stream, is_stdout):
+    stream.reconfigure(encoding=locale.getpreferredencoding(), errors='replace')
+
+    for msg in stream:
+        if is_stdout:
+            print(msg, end="", file=sys.stdout)
+        else: 
+            print(msg, end="", file=sys.stderr)
+       
+
+def process_wrap(cmd_str, cwd=None):
     print(f"[ComfyUI Ollama] EXECUTE: {cmd_str} in '{cwd}'")
     process = subprocess.Popen(cmd_str, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
 
-    if handler is None:
-        handler = handle_stream
-
-    stdout_thread = threading.Thread(target=handler, args=(process.stdout, True))
-    stderr_thread = threading.Thread(target=handler, args=(process.stderr, False))
+    stdout_thread = threading.Thread(target=handle_stream, args=(process.stdout, True))
+    stderr_thread = threading.Thread(target=handle_stream, args=(process.stderr, False))
 
     stdout_thread.start()
     stderr_thread.start()
@@ -37,5 +44,7 @@ else:
 
 print(pip_install)
 print(os.path.dirname(__file__))
+
+process_wrap(pip_install + ["-r","requirements.txt"], os.path.dirname(__file__))
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
