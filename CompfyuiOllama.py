@@ -1,6 +1,7 @@
 import ollama
 from ollama import Client
 from PIL import Image
+import numpy as np
 
 class OllamaVision:
     """
