@@ -1,4 +1,5 @@
 from .CompfyuiOllama import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+import sys
 
 pip_install = []
 
