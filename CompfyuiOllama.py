@@ -56,6 +56,11 @@ class OllamaVision:
                     "multiline": False, #True if you want the field to look like the one on the ClipTextEncode node
                     "default": "http://127.0.0.1:11434"
                 }),
+                "model": ("STRING", {
+                    "multiline": False, #True if you want the field to look like the one on the ClipTextEncode node
+                    "default": "llava"
+                }),
+                
             },
         }
 
