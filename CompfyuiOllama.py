@@ -69,8 +69,8 @@ class OllamaVision:
             },
         }
 
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image_output_name",)
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("text",)
 
     FUNCTION = "vision"
 
@@ -86,8 +86,8 @@ class OllamaVision:
                 float_field: {float_field}
             """)
         #do some processing on the image, in this example I just invert it
-        image = 1.0 - image
-        return (image,)
+        
+        return ("seems to work",)
 
 NODE_CLASS_MAPPINGS = {
     "OllamaVision": OllamaVision,
