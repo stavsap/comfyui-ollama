@@ -1,3 +1,5 @@
+import ollama
+
 class OllamaVision:
     """
     A Ollama Vision node
@@ -73,7 +75,7 @@ class OllamaVision:
 
     CATEGORY = "Ollama"
 
-    def vision(self, image, string_field, int_field, float_field, print_to_screen):
+    def vision(self, image, query, debug, url, model):
         if print_to_screen == "enable":
             print(f"""Your input contains:
                 string_field aka input text: {string_field}
@@ -81,7 +83,13 @@ class OllamaVision:
                 float_field: {float_field}
             """)
         #do some processing on the image, in this example I just invert it
-        
+        response = ollama.chat(model=model, messages=[
+          {
+            'role': 'user',
+            'content': query,
+          },
+        ])
+        print(response['message']['content'])
         return ("seems to work",)
 
 NODE_CLASS_MAPPINGS = {
