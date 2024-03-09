@@ -2,6 +2,9 @@ import ollama
 from ollama import Client
 from PIL import Image
 import numpy as np
+import torch
+from torchvision import transforms
+import base64
 
 class OllamaVision:
     """
@@ -79,12 +82,19 @@ class OllamaVision:
     CATEGORY = "Ollama"
 
     def vision(self, image, query, debug, url, model):
-        i = 255. * image.cpu().numpy()
-        img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+        transform = transforms.ToPILImage()
+        pil_image = transform(image)
+        
+        # Convert the PIL image to bytes
+        image_bytes = pil_image.tobytes()
+        
+        # Encode the bytes to base64
+        base64_string = base64.b64encode(image_bytes).decode()
+
         if debug == "enable":
             print(f"""Your input contains:
                 image: {image}
-                img: {img}
+                img: {base64_string}
                 query: {query}
                 url: {url}
                 model: {model}
