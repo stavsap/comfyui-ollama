@@ -12,7 +12,7 @@ Integrate the power of LLMs into CompfyUI workflows easily.
 
 **Or** 
 
-use the [compfyui manager](https://github.com/ltdrdata/ComfyUI-Manager) "install via git url"
+use the [compfyui manager](https://github.com/ltdrdata/ComfyUI-Manager) "install via git url".
 
 ![pic](.meta/InstallViaManager.png)
 
@@ -24,5 +24,4 @@ A node that gives an ability to query input images.
 
 ![pic](.meta/OllamaVision.png)
 
-a model name should be model with Vision abilities, for example: https://ollama.com/library/llava.
-
+A model name should be model with Vision abilities, for example: https://ollama.com/library/llava.
