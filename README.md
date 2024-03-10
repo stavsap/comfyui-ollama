@@ -25,3 +25,10 @@ A node that gives an ability to query input images.
 ![pic](.meta/OllamaVision.png)
 
 A model name should be model with Vision abilities, for example: https://ollama.com/library/llava.
+
+### OllamaGenerate
+
+A node that gives an ability to query an LLM via given prompt.
+
+![pic](.meta/OllamaGenerate.png)
+
