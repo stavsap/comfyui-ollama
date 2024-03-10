@@ -32,3 +32,9 @@ A node that gives an ability to query an LLM via given prompt.
 
 ![pic](.meta/OllamaGenerate.png)
 
+
+## Usage Example
+
+Consider the following workflow of vision an image, and perform additional text processing with desired LLM.
+
+![pic](.meta/CombinedUsage1.png)
