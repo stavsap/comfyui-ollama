@@ -33,11 +33,7 @@ class OllamaVision:
 
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("description",)
-
     FUNCTION = "vision"
-
-    #OUTPUT_NODE = False
-
     CATEGORY = "Ollama"
 
     def vision(self, images, query, debug, url, model):
@@ -51,22 +47,18 @@ class OllamaVision:
             img_bytes = base64.b64encode(buffered.getvalue())
             images_b64.append(str(img_bytes, 'utf-8'))
 
+        client = Client(host=url)
+
+        response = client.generate(model=model, prompt=query, images=images_b64)
+
         if debug == "enable":
-            print(f"""Your input contains:
+            print(f"""[Ollama Vision] query params:
                 query: {query}
                 url: {url}
                 model: {model}
             """)
 
-        client = Client(host=url)
-        response = client.chat(model=model, messages=[
-          {
-            'role': 'user',
-            'content': query,
-            'images': images_b64,
-          },
-        ])
-        return (response['message']['content'],)
+        return (response['response'],)
 
 NODE_CLASS_MAPPINGS = {
     "OllamaVision": OllamaVision,
