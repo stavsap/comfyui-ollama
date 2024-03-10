@@ -1,10 +1,10 @@
 import ollama
 from ollama import Client
-from PIL import Image
+from PIL import Image, ImageOps, ImageSequence
+from PIL.PngImagePlugin import PngInfo
 import numpy as np
-import torch
-from torchvision import transforms
 import base64
+from io import BytesIO
 
 class OllamaVision:
     """
@@ -82,15 +82,13 @@ class OllamaVision:
     CATEGORY = "Ollama"
 
     def vision(self, image, query, debug, url, model):
-        transform = transforms.ToPILImage()
-        pil_image = transform(image)
-        
-        # Convert the PIL image to bytes
-        image_bytes = pil_image.tobytes()
-        
-        # Encode the bytes to base64
-        base64_string = base64.b64encode(image_bytes).decode()
+        i = 255. * image.cpu().numpy()
+        img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
 
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue())
+        print(img_str)
         if debug == "enable":
             print(f"""Your input contains:
                 image: {image}
