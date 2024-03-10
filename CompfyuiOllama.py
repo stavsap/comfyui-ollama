@@ -87,7 +87,7 @@ class OllamaVision:
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
     
             buffered = BytesIO()
-            image.save(buffered, format="PNG")
+            img.save(buffered, format="PNG")
             img_str = base64.b64encode(buffered.getvalue())
             print(img_str)
         if debug == "enable":
