@@ -42,21 +42,22 @@ class OllamaVision:
 
     def vision(self, images, query, debug, url, model):
         images_b64 = []
+
         for (batch_number, image) in enumerate(images):
             i = 255. * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-    
             buffered = BytesIO()
             img.save(buffered, format="PNG")
             img_bytes = base64.b64encode(buffered.getvalue())
             images_b64.append(str(img_bytes, 'utf-8'))
+
         if debug == "enable":
             print(f"""Your input contains:
                 query: {query}
                 url: {url}
                 model: {model}
             """)
-        #do some processing on the image, in this example I just invert it
+
         client = Client(host=url)
         response = client.chat(model=model, messages=[
           {
