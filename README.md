@@ -2,6 +2,8 @@
 
 Custom ComfyUI Nodes for interacting with [Ollama](https://ollama.com/) using the [ollama python client](https://github.com/ollama/ollama-python).
 
+Integrate the power of LLMs into CompfyUI workflows easily.
+
 ## Installation
 
 1. Install [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
