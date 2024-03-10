@@ -54,7 +54,7 @@ class OllamaVision:
         """
         return {
             "required": {
-                "image": ("IMAGE",),
+                "images": ("IMAGE",),
                 "query": ("STRING", {
                     "multiline": True, #True if you want the field to look like the one on the ClipTextEncode node
                     "default": "describe the image"
@@ -81,14 +81,15 @@ class OllamaVision:
 
     CATEGORY = "Ollama"
 
-    def vision(self, image, query, debug, url, model):
-        i = 255. * image.cpu().numpy()
-        img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-
-        buffered = BytesIO()
-        image.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue())
-        print(img_str)
+    def vision(self, images, query, debug, url, model):
+        for (batch_number, image) in enumerate(images):
+            i = 255. * image.cpu().numpy()
+            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+    
+            buffered = BytesIO()
+            image.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue())
+            print(img_str)
         if debug == "enable":
             print(f"""Your input contains:
                 image: {image}
