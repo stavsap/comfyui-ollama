@@ -15,7 +15,6 @@ def handle_stream(stream, is_stdout):
             print(msg, end="", file=sys.stderr)
 
 def process_wrap(cmd_str, cwd=None):
-    print(f"[ComfyUI Ollama] EXECUTE: {cmd_str} in '{cwd}'")
     process = subprocess.Popen(cmd_str, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
 
     stdout_thread = threading.Thread(target=handle_stream, args=(process.stdout, True))
