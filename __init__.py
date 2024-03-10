@@ -1,11 +1,9 @@
 from .CompfyuiOllama import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 import sys
 import os
-import shutil
 import subprocess
 import threading
 import locale
-import traceback
 
 def handle_stream(stream, is_stdout):
     stream.reconfigure(encoding=locale.getpreferredencoding(), errors='replace')
@@ -15,7 +13,6 @@ def handle_stream(stream, is_stdout):
             print(msg, end="", file=sys.stdout)
         else: 
             print(msg, end="", file=sys.stderr)
-       
 
 def process_wrap(cmd_str, cwd=None):
     print(f"[ComfyUI Ollama] EXECUTE: {cmd_str} in '{cwd}'")
@@ -42,9 +39,6 @@ else:
     pip_install = [sys.executable, '-m', 'pip', 'install']
     mim_install = [sys.executable, '-m', 'mim', 'install']
 
-print(pip_install)
-print(os.path.dirname(__file__))
-
-process_wrap(pip_install + ["-r","requirements.txt"], os.path.dirname(__file__))
+process_wrap(pip_install + ["-r", "requirements.txt"], os.path.dirname(__file__))
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
