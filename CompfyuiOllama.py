@@ -82,6 +82,7 @@ class OllamaVision:
     CATEGORY = "Ollama"
 
     def vision(self, images, query, debug, url, model):
+        img_str = ""
         for (batch_number, image) in enumerate(images):
             i = 255. * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -93,7 +94,7 @@ class OllamaVision:
         if debug == "enable":
             print(f"""Your input contains:
                 image: {image}
-                img: {base64_string}
+                img: {img_str}
                 query: {query}
                 url: {url}
                 model: {model}
@@ -104,6 +105,7 @@ class OllamaVision:
           {
             'role': 'user',
             'content': query,
+            'image': img_str,
           },
         ])
         print(response['message']['content'])
