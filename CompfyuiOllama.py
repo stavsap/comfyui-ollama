@@ -1,7 +1,6 @@
 import ollama
 from ollama import Client
-from PIL import Image, ImageOps, ImageSequence
-from PIL.PngImagePlugin import PngInfo
+from PIL import Image
 import numpy as np
 import base64
 from io import BytesIO
@@ -90,11 +89,8 @@ class OllamaVision:
             buffered = BytesIO()
             img.save(buffered, format="PNG")
             img_str = base64.b64encode(buffered.getvalue())
-            print(img_str)
         if debug == "enable":
             print(f"""Your input contains:
-                image: {image}
-                img: {img_str}
                 query: {query}
                 url: {url}
                 model: {model}
@@ -105,7 +101,7 @@ class OllamaVision:
           {
             'role': 'user',
             'content': query,
-            'image': img_str,
+            'image': str(img_str, 'utf-8'),
           },
         ])
         print(response['message']['content'])
