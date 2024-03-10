@@ -28,13 +28,13 @@ A model name should be model with Vision abilities, for example: https://ollama.
 
 ### OllamaGenerate
 
-A node that gives an ability to query an LLM via given prompt.
+A node that gives an ability to query an LLM via given prompt. 
 
 ![pic](.meta/OllamaGenerate.png)
 
 
 ## Usage Example
 
-Consider the following workflow of vision an image, and perform additional text processing with desired LLM.
+Consider the following workflow of vision an image, and perform additional text processing with desired LLM. In the OllamaGenerate node set the prompt as input.
 
 ![pic](.meta/CombinedUsage1.png)
