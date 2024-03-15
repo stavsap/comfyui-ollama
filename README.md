@@ -4,6 +4,8 @@ Custom ComfyUI Nodes for interacting with [Ollama](https://ollama.com/) using th
 
 Integrate the power of LLMs into CompfyUI workflows easily.
 
+To use this properly, you would need a running ollama server reachable from your host.
+
 ## Installation
 
 1. Install [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
