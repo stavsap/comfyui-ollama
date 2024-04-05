@@ -1,10 +1,10 @@
 # ComfyUI Ollama
 
-Custom ComfyUI Nodes for interacting with [Ollama](https://ollama.com/) using the [ollama python client](https://github.com/ollama/ollama-python).
+Custom [ComfyUI](https://github.com/comfyanonymous/ComfyUI) Nodes for interacting with [Ollama](https://ollama.com/) using the [ollama python client](https://github.com/ollama/ollama-python).
 
-Integrate the power of LLMs into CompfyUI workflows easily.
+Integrate the power of LLMs into ComfyUI workflows easily or just experiment with GPT.
 
-To use this properly, you would need a running ollama server reachable from your host.
+To use this properly, you would need a running ollama server reachable from your host he is running comfy.
 
 ## Installation
 
@@ -33,6 +33,12 @@ A model name should be model with Vision abilities, for example: https://ollama.
 A node that gives an ability to query an LLM via given prompt. 
 
 ![pic](.meta/OllamaGenerate.png)
+
+### OllamaGenerateAdvance
+
+A node that gives an ability to query an LLM via given prompt with fine tune parameters and an ability to preserve context for generate chaining. 
+
+![pic](.meta/generate-advance.png)
 
 ## Usage Example
 
