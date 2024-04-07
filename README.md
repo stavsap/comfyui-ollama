@@ -40,6 +40,8 @@ A node that gives an ability to query an LLM via given prompt with fine tune par
 
 Check [ollama api docs](https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-completion) to get info on the parameters.
 
+More [params info](https://github.com/ollama/ollama/blob/main/docs/modelfile.md#parameter)
+
 ![pic](.meta/generate-advance.png)
 
 ## Usage Example
