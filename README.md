@@ -4,7 +4,7 @@ Custom [ComfyUI](https://github.com/comfyanonymous/ComfyUI) Nodes for interactin
 
 Integrate the power of LLMs into ComfyUI workflows easily or just experiment with GPT.
 
-To use this properly, you would need a running ollama server reachable from your host he is running comfy.
+To use this properly, you would need a running Ollama server reachable from the host that is running ComfyUI.
 
 ## Installation
 
