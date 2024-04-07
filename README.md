@@ -38,6 +38,8 @@ A node that gives an ability to query an LLM via given prompt.
 
 A node that gives an ability to query an LLM via given prompt with fine tune parameters and an ability to preserve context for generate chaining. 
 
+Check [ollama api docs](https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-completion) to get info on the parameters.
+
 ![pic](.meta/generate-advance.png)
 
 ## Usage Example
