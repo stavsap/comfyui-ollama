@@ -163,7 +163,7 @@ class OllamaGenerateAdvance:
                     "default": "You are an art expert, gracefully describing your knowledge in art domain.",
                     "title":"system"
                 }),
-                "seed": ("FLOAT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
+                "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
                 "top_k": ("FLOAT", {"default": 40, "min": 0, "max": 100, "step": 1}),
                 "top_p": ("FLOAT", {"default": 0.9, "min": 0, "max": 1, "step": 0.05}),
                 "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.05}),
