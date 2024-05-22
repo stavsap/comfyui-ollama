@@ -10,7 +10,7 @@ from io import BytesIO
 class OllamaVision:
     def __init__(self):
         pass
-    
+
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -29,7 +29,8 @@ class OllamaVision:
                     "multiline": False,
                     "default": "llava"
                 }),
-                
+                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
+
             },
         }
 
@@ -38,7 +39,7 @@ class OllamaVision:
     FUNCTION = "ollama_vision"
     CATEGORY = "Ollama"
 
-    def ollama_vision(self, images, query, debug, url, model):
+    def ollama_vision(self, images, query, debug, url, model, keep_alive):
         images_b64 = []
 
         for (batch_number, image) in enumerate(images):
@@ -52,7 +53,7 @@ class OllamaVision:
         client = Client(host=url)
 
         if debug == "enable":
-            print(f"""[Ollama Vision] 
+            print(f"""[Ollama Vision]
 request query params:
 
 - query: {query}
@@ -61,7 +62,7 @@ request query params:
 
 """)
 
-        response = client.generate(model=model, prompt=query, images=images_b64)
+        response = client.generate(model=model, prompt=query, images=images_b64, keep_alive=str(-keep_alive) + "m")
 
 
 
@@ -89,6 +90,7 @@ class OllamaGenerate:
                     "multiline": False,
                     "default": "llama2"
                 }),
+                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
             },
         }
 
@@ -97,21 +99,21 @@ class OllamaGenerate:
     FUNCTION = "ollama_generate"
     CATEGORY = "Ollama"
 
-    def ollama_generate(self, prompt, debug, url, model):
+    def ollama_generate(self, prompt, debug, url, model, keep_alive):
 
         client = Client(host=url)
 
         if debug == "enable":
-            print(f"""[Ollama Generate] 
+            print(f"""[Ollama Generate]
 request query params:
-               
+
 - prompt: {prompt}
 - url: {url}
 - model: {model}
 
             """)
 
-        response = client.generate(model=model, prompt=prompt)
+        response = client.generate(model=model, prompt=prompt, keep_alive=str(-keep_alive) + "m")
 
         if debug == "enable":
                 print(f"""\n[Ollama Generate]
@@ -169,6 +171,7 @@ class OllamaGenerateAdvance:
                 "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.05}),
                 "num_predict": ("FLOAT", {"default": -1, "min": -2, "max": 2048, "step": 1}),
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
+                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
             },"optional": {
                 "context": ("STRING", {"forceInput": True}),
             }
@@ -179,7 +182,7 @@ class OllamaGenerateAdvance:
     FUNCTION = "ollama_generate_advance"
     CATEGORY = "Ollama"
 
-    def ollama_generate_advance(self, prompt, debug, url, model, system, seed,top_k, top_p,temperature,num_predict,tfs_z, context=None):
+    def ollama_generate_advance(self, prompt, debug, url, model, system, seed,top_k, top_p,temperature, num_predict, tfs_z, keep_alive, context=None):
 
         client = Client(host=url)
 
@@ -220,7 +223,7 @@ request query params:
 - options: {options}
 """)
 
-        response = client.generate(model=model, system=system, prompt=prompt, context=context, options=options)
+        response = client.generate(model=model, system=system, prompt=prompt, context=context, options=options, keep_alive=str(-keep_alive) + "m")
 
         if debug == "enable":
             print(f"""\n[Ollama Generate Advance]
@@ -253,4 +256,3 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OllamaGenerate": "Ollama Generate",
     "OllamaGenerateAdvance": "Ollama Generate Advance",
 }
-
