@@ -62,7 +62,7 @@ request query params:
 
 """)
 
-        response = client.generate(model=model, prompt=query, images=images_b64, keep_alive=str(-keep_alive) + "m")
+        response = client.generate(model=model, prompt=query, images=images_b64, keep_alive=str(keep_alive) + "m")
 
 
 
@@ -113,7 +113,7 @@ request query params:
 
             """)
 
-        response = client.generate(model=model, prompt=prompt, keep_alive=str(-keep_alive) + "m")
+        response = client.generate(model=model, prompt=prompt, keep_alive=str(keep_alive) + "m")
 
         if debug == "enable":
                 print(f"""\n[Ollama Generate]
@@ -223,7 +223,7 @@ request query params:
 - options: {options}
 """)
 
-        response = client.generate(model=model, system=system, prompt=prompt, context=context, options=options, keep_alive=str(-keep_alive) + "m")
+        response = client.generate(model=model, system=system, prompt=prompt, context=context, options=options, keep_alive=str(keep_alive) + "m")
 
         if debug == "enable":
             print(f"""\n[Ollama Generate Advance]
