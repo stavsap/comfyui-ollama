@@ -5,7 +5,17 @@ from PIL import Image
 import numpy as np
 import base64
 from io import BytesIO
+from server import PromptServer
+from aiohttp import web
 
+@PromptServer.instance.routes.post("/ollama/get_models")
+async def get_models_endpoint(request):
+    data = await request.json()
+    url = data.get("url")
+    client = Client(host=url)
+    models = [model['name'] for model in client.list().get('models', [])]
+    
+    return web.json_response(models)
 
 class OllamaVision:
     def __init__(self):
@@ -25,12 +35,8 @@ class OllamaVision:
                     "multiline": False,
                     "default": "http://127.0.0.1:11434"
                 }),
-                "model": ("STRING", {
-                    "multiline": False,
-                    "default": "llava"
-                }),
-                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
-
+                "model": ((), {}),
+                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),                
             },
         }
 
@@ -86,10 +92,7 @@ class OllamaGenerate:
                     "multiline": False,
                     "default": "http://127.0.0.1:11434"
                 }),
-                "model": ("STRING", {
-                    "multiline": False,
-                    "default": "llama2"
-                }),
+                "model": ((), {}),
                 "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
             },
         }
@@ -156,10 +159,7 @@ class OllamaGenerateAdvance:
                     "multiline": False,
                     "default": "http://127.0.0.1:11434"
                 }),
-                "model": ("STRING", {
-                    "multiline": False,
-                    "default": "llama2"
-                }),
+                "model": ((), {}),
                 "system": ("STRING", {
                     "multiline": True,
                     "default": "You are an art expert, gracefully describing your knowledge in art domain.",
