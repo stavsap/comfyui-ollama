@@ -60,8 +60,6 @@ app.registerExtension({
           this.triggerSlot(0);
         };
 
-        // engineWidget.callback = updateModels;
-
         // Initial update
         await updateModels();
       };
