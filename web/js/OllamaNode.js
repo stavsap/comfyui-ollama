@@ -27,7 +27,7 @@ app.registerExtension({
 
             if (response.ok) {
               const models = await response.json();
-              console.log("Fetched models:", models);
+              console.debug("Fetched models:", models);
               return models;
             } else {
               console.error(`Failed to fetch models: ${response.status}`);
@@ -41,27 +41,33 @@ app.registerExtension({
 
         const updateModels = async () => {
           const url = urlWidget.value;
+          const prevValue = modelWidget.value
+          modelWidget.value = ''
+          modelWidget.options.values = []
 
           const models = await fetchModels(url);
 
           // Update modelWidget options and value
           modelWidget.options.values = models;
-          console.log("Updated modelWidget.options.values:", modelWidget.options.values);
+          console.debug("Updated modelWidget.options.values:", modelWidget.options.values);
 
-          if (models.includes(modelWidget.value)) {
-            modelWidget.value = modelWidget.value;
+          if (models.includes(prevValue)) {
+            modelWidget.value = prevValue; // stay on current.
           } else if (models.length > 0) {
-            modelWidget.value = models[0];
-          } else {
-            modelWidget.value = "";
+            modelWidget.value = models[0]; // set first as default.
           }
-          console.log("Updated modelWidget.value:", modelWidget.value);
 
-          this.triggerSlot(0);
+          console.debug("Updated modelWidget.value:", modelWidget.value);
         };
 
         urlWidget.callback = updateModels;
+
+        const dummy = async () => {
+          // calling async method will update the widgets with actual value from the browser and not the default from Node definition.
+        }
+
         // Initial update
+        await dummy(); // this will cause the widgets to obtain the actual value from web page.
         await updateModels();
       };
     }
