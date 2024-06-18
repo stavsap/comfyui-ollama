@@ -142,6 +142,8 @@ response:
 # https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-completion
 
 class OllamaGenerateAdvance:
+    saved_context = None
+
     def __init__(self):
         pass
 
@@ -154,7 +156,7 @@ class OllamaGenerateAdvance:
                     "multiline": True,
                     "default": "What is Art?"
                 }),
-                "debug": (["enable", "disable"],),
+                "debug": ("BOOLEAN", {"default": False}),
                 "url": ("STRING", {
                     "multiline": False,
                     "default": "http://127.0.0.1:11434"
@@ -172,6 +174,7 @@ class OllamaGenerateAdvance:
                 "num_predict": ("FLOAT", {"default": -1, "min": -2, "max": 2048, "step": 1}),
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
                 "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
+                "keep_context": ("BOOLEAN", {"default": False}),
             },"optional": {
                 "context": ("STRING", {"forceInput": True}),
             }
@@ -182,7 +185,7 @@ class OllamaGenerateAdvance:
     FUNCTION = "ollama_generate_advance"
     CATEGORY = "Ollama"
 
-    def ollama_generate_advance(self, prompt, debug, url, model, system, seed,top_k, top_p,temperature, num_predict, tfs_z, keep_alive, context=None):
+    def ollama_generate_advance(self, prompt, debug, url, model, system, seed, top_k, top_p,temperature, num_predict, tfs_z, keep_alive, keep_context, context=None):
 
         client = Client(host=url)
 
@@ -213,7 +216,10 @@ class OllamaGenerateAdvance:
             "tfs_z":tfs_z,
         }
 
-        if debug == "enable":
+        if keep_context and context == None:
+            context = self.saved_context
+
+        if debug:
             print(f"""[Ollama Generate Advance]
 request query params:
 
@@ -225,7 +231,10 @@ request query params:
 
         response = client.generate(model=model, system=system, prompt=prompt, context=context, options=options, keep_alive=str(keep_alive) + "m")
 
-        if debug == "enable":
+        if keep_context:
+            self.saved_context = response["context"]
+
+        if debug:
             print(f"""\n[Ollama Generate Advance]
 response:
 
