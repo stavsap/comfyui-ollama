@@ -1,3 +1,8 @@
+18-06-2024
+
+- Add `keep_context` option in OllamaGenerateAdvance, this flag will preserve context from the current run in the node itself.
+- Modify debug flag to be boolean.
+
 24-05-2024
 
 - Add drop down list to select ollama models that currently available in ollama server.
