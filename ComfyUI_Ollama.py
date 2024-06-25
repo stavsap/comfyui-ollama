@@ -1,4 +1,5 @@
 import random
+import time
 
 from ollama import Client
 from PIL import Image
@@ -90,10 +91,11 @@ request query params:
                     images=images_b64,
                     keep_alive=str(keep_alive) + "m",
                 )
-                _key_list = list(response.keys())
+
                 if debug:
+                    _key_list = list(response.keys())
                     logger.info(
-                        f"""\n[Ollama Vision]
+                        f"""[Ollama Vision]
 response:
 
 - model: {response["model"] if "model" in _key_list else None}
@@ -177,9 +179,9 @@ request query params:
                     prompt=prompt,
                     keep_alive=str(keep_alive) + "m",
                 )
-                _key_list = list(response.keys())
 
                 if debug:
+                    _key_list = list(response.keys())
                     logger.info(
                         f"""[Ollama Generate]
 response:
@@ -348,9 +350,9 @@ request query params:
                     options=options,
                     keep_alive=str(keep_alive) + "m",
                 )
-                _key_list = list(response.keys())
 
                 if debug:
+                    _key_list = list(response.keys())
                     logger.info(
                         f"""[Ollama Generate Advance]
 response:
@@ -456,9 +458,9 @@ request query params:
                     messages=messages,
                     keep_alive=str(keep_alive) + "m",
                 )
-                _key_list = list(response.keys())
 
                 if debug:
+                    _key_list = list(response.keys())
                     logger.info(
                         f"""[Ollama One Round Chat]
 response:
@@ -612,6 +614,7 @@ request query params:
 
         for i in range(RETRY_LIMIT):
             try:
+
                 response = client.chat(
                     model=model,
                     stream=False,
@@ -619,9 +622,9 @@ request query params:
                     options=options,
                     keep_alive=str(keep_alive) + "m",
                 )
-                _key_list = list(response.keys())
 
                 if debug:
+                    _key_list = list(response.keys())
                     logger.info(
                         f"""[Ollama One Round Chat Advance]
 response:
