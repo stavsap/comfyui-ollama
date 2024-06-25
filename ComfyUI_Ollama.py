@@ -10,10 +10,12 @@ from aiohttp import web
 
 import logging
 
-RETRY_LIMIT=3
+RETRY_LIMIT = 3
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('ComfyUI-Ollama')
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger("ComfyUI-Ollama")
 
 
 @PromptServer.instance.routes.post("/ollama/get_models")
@@ -21,9 +23,10 @@ async def get_models_endpoint(request):
     data = await request.json()
     url = data.get("url")
     client = Client(host=url)
-    models = [model['name'] for model in client.list().get('models', [])]
-    
+    models = [model["name"] for model in client.list().get("models", [])]
+
     return web.json_response(models)
+
 
 class OllamaVision:
     def __init__(self):
@@ -34,17 +37,17 @@ class OllamaVision:
         return {
             "required": {
                 "images": ("IMAGE",),
-                "query": ("STRING", {
-                    "multiline": True,
-                    "default": "describe the image"
-                }),
+                "query": (
+                    "STRING",
+                    {"multiline": True, "default": "describe the image"},
+                ),
                 "debug": ("BOOLEAN", {"default": False}),
-                "url": ("STRING", {
-                    "multiline": False,
-                    "default": "http://127.0.0.1:11434"
-                }),
+                "url": (
+                    "STRING",
+                    {"multiline": False, "default": "http://127.0.0.1:11434"},
+                ),
                 "model": ((), {}),
-                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 360, "step": 1}),                
+                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 360, "step": 1}),
             },
         }
 
@@ -56,33 +59,41 @@ class OllamaVision:
     def ollama_vision(self, images, query, debug, url, model, keep_alive):
         images_b64 = []
 
-        for (batch_number, image) in enumerate(images):
-            i = 255. * image.cpu().numpy()
+        for batch_number, image in enumerate(images):
+            i = 255.0 * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
             buffered = BytesIO()
             img.save(buffered, format="PNG")
             img_bytes = base64.b64encode(buffered.getvalue())
-            images_b64.append(str(img_bytes, 'utf-8'))
+            images_b64.append(str(img_bytes, "utf-8"))
 
         client = Client(host=url)
 
         if debug:
-            logger.info(f"""[Ollama Vision]
+            logger.info(
+                f"""[Ollama Vision]
 request query params:
 
 - query: {query}
 - url: {url}
 - model: {model}
-""")
+"""
+            )
         else:
             logger.info("[Ollama Vision]: request query")
-        
+
         for i in range(RETRY_LIMIT):
             try:
-                response = client.generate(model=model, prompt=query, images=images_b64, keep_alive=str(keep_alive) + "m")
-                _key_list=list(response.keys())
+                response = client.generate(
+                    model=model,
+                    prompt=query,
+                    images=images_b64,
+                    keep_alive=str(keep_alive) + "m",
+                )
+                _key_list = list(response.keys())
                 if debug:
-                    logger.info(f"""\n[Ollama Vision]
+                    logger.info(
+                        f"""\n[Ollama Vision]
 response:
 
 - model: {response["model"] if "model" in _key_list else None}
@@ -97,22 +108,26 @@ response:
 - response: {response["response"]if "response" in _key_list else None}
 
 - context: {response["context"]if "context" in _key_list else None}
-""")
+"""
+                    )
                 else:
                     logger.info("[Ollama Vision]: get response")
-                    if response['response']== '':raise KeyError('Empty Response')
-                break #No Exception, break
+                    if response["response"] == "":
+                        raise KeyError("Empty Response")
+                break  # No Exception, break
             except Exception as e:
-                logger.warn(f"""[Ollama Vision]
+                logger.warn(
+                    f"""[Ollama Vision]
 get response ERROR:
-{e.__class__,e}""")
-                if i+1 ==RETRY_LIMIT:
+{e.__class__,e}"""
+                )
+                if i + 1 == RETRY_LIMIT:
                     logger.error("[Ollama Vision]: retry over limit")
                     raise e
                 else:
-                    logger.info(f"[Ollama Vision]: retry {i+1}") #Retry, no break
-                
-        return (response['response'],)
+                    logger.info(f"[Ollama Vision]: retry {i+1}")  # Retry, no break
+
+        return (response["response"],)
 
 
 class OllamaGenerate:
@@ -123,17 +138,14 @@ class OllamaGenerate:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "prompt": ("STRING", {
-                    "multiline": True,
-                    "default": "What is Art?"
-                }),
+                "prompt": ("STRING", {"multiline": True, "default": "What is Art?"}),
                 "debug": ("BOOLEAN", {"default": False}),
-                "url": ("STRING", {
-                    "multiline": False,
-                    "default": "http://127.0.0.1:11434"
-                }),
+                "url": (
+                    "STRING",
+                    {"multiline": False, "default": "http://127.0.0.1:11434"},
+                ),
                 "model": ((), {}),
-                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 360, "step": 1}),
+                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 360, "step": 1}),
             },
         }
 
@@ -147,22 +159,29 @@ class OllamaGenerate:
         client = Client(host=url)
 
         if debug:
-            logger.info(f"""[Ollama Generate]
+            logger.info(
+                f"""[Ollama Generate]
 request query params:
 
 - prompt: {prompt}
 - url: {url}
 - model: {model}
-""")
+"""
+            )
         else:
             logger.info("[Ollama Vision]: request query")
         for i in range(RETRY_LIMIT):
             try:
-                response = client.generate(model=model, prompt=prompt, keep_alive=str(keep_alive) + "m")
-                _key_list=list(response.keys())
-                
+                response = client.generate(
+                    model=model,
+                    prompt=prompt,
+                    keep_alive=str(keep_alive) + "m",
+                )
+                _key_list = list(response.keys())
+
                 if debug:
-                    logger.info(f"""[Ollama Generate]
+                    logger.info(
+                        f"""[Ollama Generate]
 response:
 
 - model: {response["model"] if "model" in _key_list else None}
@@ -177,22 +196,27 @@ response:
 - response: {response["response"]if "response" in _key_list else None}
 
 - context: {response["context"]if "context" in _key_list else None}
-""")
+"""
+                    )
                 else:
                     logger.info("[Ollama Generate]: get response")
-                    if response['response']== '':raise KeyError('Empty Response')
-                break #No Exception, break
+                    if response["response"] == "":
+                        raise KeyError("Empty Response")
+                break  # No Exception, break
             except Exception as e:
-                logger.warn(f"""[Ollama Generate]
+                logger.warn(
+                    f"""[Ollama Generate]
 get response ERROR:
-{e.__class__,e}""")
-                if i+1 ==RETRY_LIMIT:
+{e.__class__,e}"""
+                )
+                if i + 1 == RETRY_LIMIT:
                     logger.error("[Ollama Generate]: retry over limit")
                     raise e
                 else:
-                    logger.info(f"[Ollama Generate]: retry {i+1}") #Retry, no break
-                
-        return (response['response'],)
+                    logger.info(f"[Ollama Generate]: retry {i+1}")  # Retry, no break
+
+        return (response["response"],)
+
 
 class OllamaGenerateAdvance:
     saved_context = None
@@ -202,43 +226,72 @@ class OllamaGenerateAdvance:
 
     @classmethod
     def INPUT_TYPES(s):
-        seed = random.randint(1, 2 ** 31)
+        seed = random.randint(1, 2**31)
         return {
             "required": {
-                "prompt": ("STRING", {
-                    "multiline": True,
-                    "default": "What is Art?"
-                }),
+                "prompt": ("STRING", {"multiline": True, "default": "What is Art?"}),
                 "debug": ("BOOLEAN", {"default": False}),
-                "url": ("STRING", {
-                    "multiline": False,
-                    "default": "http://127.0.0.1:11434"
-                }),
+                "url": (
+                    "STRING",
+                    {"multiline": False, "default": "http://127.0.0.1:11434"},
+                ),
                 "model": ((), {}),
-                "system": ("STRING", {
-                    "multiline": True,
-                    "default": "You are an art expert, gracefully describing your knowledge in art domain.",
-                    "title":"system"
-                }),
-                "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
+                "system": (
+                    "STRING",
+                    {
+                        "multiline": True,
+                        "default": "You are an art expert, gracefully describing your knowledge in art domain.",
+                        "title": "system",
+                    },
+                ),
+                "seed": ("INT", {"default": seed, "min": 0, "max": 2**31, "step": 1}),
                 "top_k": ("FLOAT", {"default": 40, "min": 0, "max": 100, "step": 1}),
                 "top_p": ("FLOAT", {"default": 0.9, "min": 0, "max": 1, "step": 0.05}),
-                "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.05}),
-                "num_predict": ("FLOAT", {"default": -1, "min": -2, "max": 2048, "step": 1}),
+                "temperature": (
+                    "FLOAT",
+                    {"default": 0.8, "min": 0, "max": 1, "step": 0.05},
+                ),
+                "num_predict": (
+                    "FLOAT",
+                    {"default": -1, "min": -2, "max": 2048, "step": 1},
+                ),
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
-                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 360, "step": 1}),
+                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 360, "step": 1}),
                 "keep_context": ("BOOLEAN", {"default": False}),
-            },"optional": {
+            },
+            "optional": {
                 "context": ("STRING", {"forceInput": True}),
-            }
+            },
         }
 
-    RETURN_TYPES = ("STRING","STRING",)
-    RETURN_NAMES = ("response","context",)
+    RETURN_TYPES = (
+        "STRING",
+        "STRING",
+    )
+    RETURN_NAMES = (
+        "response",
+        "context",
+    )
     FUNCTION = "ollama_generate_advance"
     CATEGORY = "Ollama"
 
-    def ollama_generate_advance(self, prompt, debug, url, model, system, seed, top_k, top_p,temperature, num_predict, tfs_z, keep_alive, keep_context, context=None):
+    def ollama_generate_advance(
+        self,
+        prompt,
+        debug,
+        url,
+        model,
+        system,
+        seed,
+        top_k,
+        top_p,
+        temperature,
+        num_predict,
+        tfs_z,
+        keep_alive,
+        keep_context,
+        context=None,
+    ):
 
         client = Client(host=url)
 
@@ -262,34 +315,44 @@ class OllamaGenerateAdvance:
 
         options = {
             "seed": seed,
-            "top_k":top_k,
-            "top_p":top_p,
-            "temperature":temperature,
-            "num_predict":num_predict,
-            "tfs_z":tfs_z,
+            "top_k": top_k,
+            "top_p": top_p,
+            "temperature": temperature,
+            "num_predict": num_predict,
+            "tfs_z": tfs_z,
         }
 
         if keep_context and context == None:
             context = self.saved_context
 
         if debug:
-            logger.info(f"""[Ollama Generate Advance]
+            logger.info(
+                f"""[Ollama Generate Advance]
 request query params:
 
 - prompt: {prompt}
 - url: {url}
 - model: {model}
 - options: {options}
-""")
+"""
+            )
         else:
             logger.info("[Ollama Generate Advance]: request query")
         for i in range(RETRY_LIMIT):
             try:
-                response = client.generate(model=model, system=system, prompt=prompt, context=context, options=options, keep_alive=str(keep_alive) + "m")
-                _key_list=list(response.keys())
+                response = client.generate(
+                    model=model,
+                    system=system,
+                    prompt=prompt,
+                    context=context,
+                    options=options,
+                    keep_alive=str(keep_alive) + "m",
+                )
+                _key_list = list(response.keys())
 
                 if debug:
-                    logger.info(f"""[Ollama Generate Advance]
+                    logger.info(
+                        f"""[Ollama Generate Advance]
 response:
 
 - model: {response["model"] if "model" in _key_list else None}
@@ -304,26 +367,36 @@ response:
 - response: {response["response"]if "response" in _key_list else None}
 
 - context: {response["context"]if "context" in _key_list else None}
-""")
+"""
+                    )
                 else:
                     logger.info("[Ollama Generate Advance]: get response")
-                    if response['response']== '':raise KeyError('Empty Response')
-                break #No Exception, break
+                    if response["response"] == "":
+                        raise KeyError("Empty Response")
+                break  # No Exception, break
             except Exception as e:
-                logger.warn(f"""[Ollama Generate Advance]
+                logger.warn(
+                    f"""[Ollama Generate Advance]
 get response ERROR:
-{e.__class__,e}""")
-                if i+1 ==RETRY_LIMIT:
+{e.__class__,e}"""
+                )
+                if i + 1 == RETRY_LIMIT:
                     logger.error("[Ollama Generate Advance]: retry over limit")
                     raise e
                 else:
-                    logger.info(f"[Ollama Generate Advance]: retry {i+1}") #Retry, no break
-                    
+                    logger.info(
+                        f"[Ollama Generate Advance]: retry {i+1}"
+                    )  # Retry, no break
+
         if keep_context:
             self.saved_context = response["context"]
-            
-        return (response['response'],response['context'],)
-    
+
+        return (
+            response["response"],
+            response["context"],
+        )
+
+
 class OllamaOneRoundChat:
     def __init__(self):
         pass
@@ -332,21 +405,21 @@ class OllamaOneRoundChat:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "system_prompt": ("STRING", {
-                    "multiline": True,
-                    "default": "What is Art?"
-                }),
-                "user_prompt": ("STRING", {
-                    "multiline": True,
-                    "default": "Tell me about Art!"
-                }),
+                "system_prompt": (
+                    "STRING",
+                    {"multiline": True, "default": "What is Art?"},
+                ),
+                "user_prompt": (
+                    "STRING",
+                    {"multiline": True, "default": "Tell me about Art!"},
+                ),
                 "debug": ("BOOLEAN", {"default": False}),
-                "url": ("STRING", {
-                    "multiline": False,
-                    "default": "http://127.0.0.1:11434"
-                }),
+                "url": (
+                    "STRING",
+                    {"multiline": False, "default": "http://127.0.0.1:11434"},
+                ),
                 "model": ((), {}),
-                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 360, "step": 1}),
+                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 360, "step": 1}),
             },
         }
 
@@ -358,34 +431,36 @@ class OllamaOneRoundChat:
     def ollama_chat(self, system_prompt, user_prompt, debug, url, model, keep_alive):
 
         client = Client(host=url)
-        messages=[
-                    {
-                    "role": "system",
-                    "content": system_prompt
-                    },
-                    {
-                    "role": "user",
-                    "content": user_prompt
-                    }
-                ]
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
         if debug:
-            logger.info(f"""[Ollama One Round Chat]
+            logger.info(
+                f"""[Ollama One Round Chat]
 request query params:
 
 - message: {messages}
 - url: {url}
 - model: {model}
-""")
+"""
+            )
         else:
             logger.info("[Ollama One Round Chat]: request query")
-            
+
         for i in range(RETRY_LIMIT):
             try:
-                response = client.chat(model=model, stream=False, messages=messages, keep_alive=str(keep_alive) + "m")
-                _key_list=list(response.keys())
+                response = client.chat(
+                    model=model,
+                    stream=False,
+                    messages=messages,
+                    keep_alive=str(keep_alive) + "m",
+                )
+                _key_list = list(response.keys())
 
                 if debug:
-                    logger.info(f"""[Ollama One Round Chat]
+                    logger.info(
+                        f"""[Ollama One Round Chat]
 response:
 
 - model: {response["model"] if "model" in _key_list else None}
@@ -398,24 +473,34 @@ response:
 - prompt_eval_duration: {response["prompt_eval_duration"]if "prompt_eval_duration" in _key_list else None}
 
 - response: {response['message']['content']if "message" in _key_list else None}
-""")
+"""
+                    )
                 else:
                     logger.info("[Ollama One Round Chat]: get response")
-                    if response['message']['content']== '':raise KeyError('Empty Response')#Check if ERROR here and raise
-                break #No Exception, break
+                    if response["message"]["content"] == "":
+                        raise KeyError(
+                            "Empty Response"
+                        )  # Check if ERROR here and raise
+                break  # No Exception, break
             except Exception as e:
-                logger.warn(f"""[Ollama One Round Chat]
+                logger.warn(
+                    f"""[Ollama One Round Chat]
 get response ERROR:
-{e.__class__,e}""")
-                if i+1 ==RETRY_LIMIT:
+{e.__class__,e}"""
+                )
+                if i + 1 == RETRY_LIMIT:
                     logger.error("[Ollama One Round Chat]: retry over limit")
                     raise e
                 else:
-                    logger.info(f"[Ollama One Round Chat]: retry {i+1}") #Retry, no break
+                    logger.info(
+                        f"[Ollama One Round Chat]: retry {i+1}"
+                    )  # Retry, no break
 
-        return (response['message']['content'],)
+        return (response["message"]["content"],)
+
 
 # https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-chat-completion
+
 
 class OllamaOneRoundChatAdvance:
     saved_context = None
@@ -425,30 +510,36 @@ class OllamaOneRoundChatAdvance:
 
     @classmethod
     def INPUT_TYPES(s):
-        seed = random.randint(1, 2 ** 31)
+        seed = random.randint(1, 2**31)
         return {
             "required": {
-                "system_prompt": ("STRING", {
-                    "multiline": True,
-                    "default": "What is Art?"
-                }),
-                "user_prompt": ("STRING", {
-                    "multiline": True,
-                    "default": "Tell me about Art!"
-                }),
+                "system_prompt": (
+                    "STRING",
+                    {"multiline": True, "default": "What is Art?"},
+                ),
+                "user_prompt": (
+                    "STRING",
+                    {"multiline": True, "default": "Tell me about Art!"},
+                ),
                 "debug": ("BOOLEAN", {"default": False}),
-                "url": ("STRING", {
-                    "multiline": False,
-                    "default": "http://127.0.0.1:11434"
-                }),
+                "url": (
+                    "STRING",
+                    {"multiline": False, "default": "http://127.0.0.1:11434"},
+                ),
                 "model": ((), {}),
-                "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
+                "seed": ("INT", {"default": seed, "min": 0, "max": 2**31, "step": 1}),
                 "top_k": ("FLOAT", {"default": 40, "min": 0, "max": 100, "step": 1}),
                 "top_p": ("FLOAT", {"default": 0.9, "min": 0, "max": 1, "step": 0.05}),
-                "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.05}),
-                "num_predict": ("FLOAT", {"default": -1, "min": -2, "max": 2048, "step": 1}),
+                "temperature": (
+                    "FLOAT",
+                    {"default": 0.8, "min": 0, "max": 1, "step": 0.05},
+                ),
+                "num_predict": (
+                    "FLOAT",
+                    {"default": -1, "min": -2, "max": 2048, "step": 1},
+                ),
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
-                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 360, "step": 1}),
+                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 360, "step": 1}),
             },
         }
 
@@ -457,7 +548,21 @@ class OllamaOneRoundChatAdvance:
     FUNCTION = "ollama_chat_advance"
     CATEGORY = "Ollama"
 
-    def ollama_chat_advance(self, system_prompt, user_prompt, debug, url, model, seed, top_k, top_p,temperature, num_predict, tfs_z, keep_alive):
+    def ollama_chat_advance(
+        self,
+        system_prompt,
+        user_prompt,
+        debug,
+        url,
+        model,
+        seed,
+        top_k,
+        top_p,
+        temperature,
+        num_predict,
+        tfs_z,
+        keep_alive,
+    ):
 
         client = Client(host=url)
 
@@ -481,41 +586,44 @@ class OllamaOneRoundChatAdvance:
 
         options = {
             "seed": seed,
-            "top_k":top_k,
-            "top_p":top_p,
-            "temperature":temperature,
-            "num_predict":num_predict,
-            "tfs_z":tfs_z,
+            "top_k": top_k,
+            "top_p": top_p,
+            "temperature": temperature,
+            "num_predict": num_predict,
+            "tfs_z": tfs_z,
         }
-        messages=[
-                    {
-                    "role": "system",
-                    "content": system_prompt
-                    },
-                    {
-                    "role": "user",
-                    "content": user_prompt
-                    }
-                ]
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
         if debug:
-            logger.info(f"""[Ollama One Round Chat Advance]
+            logger.info(
+                f"""[Ollama One Round Chat Advance]
 request query params:
 
 - message: {messages}
 - url: {url}
 - model: {model}
 - options: {options}
-""")
+"""
+            )
         else:
             logger.info("[Ollama One Round Chat Advance]: request query")
-            
+
         for i in range(RETRY_LIMIT):
             try:
-                response = client.chat(model=model, stream=False, messages=messages, options=options, keep_alive=str(keep_alive) + "m")
-                _key_list=list(response.keys())
-                
+                response = client.chat(
+                    model=model,
+                    stream=False,
+                    messages=messages,
+                    options=options,
+                    keep_alive=str(keep_alive) + "m",
+                )
+                _key_list = list(response.keys())
+
                 if debug:
-                    logger.info(f"""[Ollama One Round Chat Advance]
+                    logger.info(
+                        f"""[Ollama One Round Chat Advance]
 response:
 
 - model: {response["model"] if "model" in _key_list else None}
@@ -528,22 +636,31 @@ response:
 - prompt_eval_duration: {response["prompt_eval_duration"]if "prompt_eval_duration" in _key_list else None}
 
 - response: {response['message']['content']if "message" in _key_list else None}
-""")
+"""
+                    )
                 else:
                     logger.info("[Ollama One Round Chat Advance]: get response")
-                    if response['message']['content']== '':raise KeyError('Empty Response')#Check if ERROR here and raise
-                break #No Exception, break
+                    if response["message"]["content"] == "":
+                        raise KeyError(
+                            "Empty Response"
+                        )  # Check if ERROR here and raise
+                break  # No Exception, break
             except Exception as e:
-                logger.warn(f"""[Ollama One Round Chat Advance]
+                logger.warn(
+                    f"""[Ollama One Round Chat Advance]
 get response ERROR:
-{e.__class__,e}""")
-                if i+1 ==RETRY_LIMIT:
+{e.__class__,e}"""
+                )
+                if i + 1 == RETRY_LIMIT:
                     logger.error("[Ollama One Round Chat Advance]: retry over limit")
                     raise e
                 else:
-                    logger.info(f"[Ollama One Round Chat Advance]: retry {i+1}") #Retry, no break
+                    logger.info(
+                        f"[Ollama One Round Chat Advance]: retry {i+1}"
+                    )  # Retry, no break
 
-        return (response['message']['content'],)
+        return (response["message"]["content"],)
+
 
 NODE_CLASS_MAPPINGS = {
     "OllamaVision": OllamaVision,
@@ -551,7 +668,6 @@ NODE_CLASS_MAPPINGS = {
     "OllamaGenerateAdvance": OllamaGenerateAdvance,
     "OllamaOneRoundChat": OllamaOneRoundChat,
     "OllamaOneRoundChatAdvance": OllamaOneRoundChatAdvance,
-
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -560,5 +676,4 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OllamaGenerateAdvance": "Ollama Generate Advance",
     "OllamaOneRoundChat": "Ollama One Round Chat",
     "OllamaOneRoundChatAdvance": "Ollama One Round Chat Advance",
-
 }
