@@ -48,7 +48,7 @@ class OllamaVision:
                     {"multiline": False, "default": "http://127.0.0.1:11434"},
                 ),
                 "model": ((), {}),
-                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 360, "step": 1}),
+                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 360, "step": 1}),
             },
         }
 
@@ -147,7 +147,7 @@ class OllamaGenerate:
                     {"multiline": False, "default": "http://127.0.0.1:11434"},
                 ),
                 "model": ((), {}),
-                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 360, "step": 1}),
+                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 360, "step": 1}),
             },
         }
 
@@ -258,7 +258,7 @@ class OllamaGenerateAdvance:
                     {"default": -1, "min": -2, "max": 2048, "step": 1},
                 ),
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
-                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 360, "step": 1}),
+                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 360, "step": 1}),
                 "keep_context": ("BOOLEAN", {"default": False}),
             },
             "optional": {
@@ -421,7 +421,7 @@ class OllamaOneRoundChat:
                     {"multiline": False, "default": "http://127.0.0.1:11434"},
                 ),
                 "model": ((), {}),
-                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 360, "step": 1}),
+                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 360, "step": 1}),
             },
         }
 
@@ -541,7 +541,7 @@ class OllamaOneRoundChatAdvance:
                     {"default": -1, "min": -2, "max": 2048, "step": 1},
                 ),
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
-                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 360, "step": 1}),
+                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 360, "step": 1}),
             },
         }
 
