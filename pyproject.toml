@@ -10,6 +10,6 @@ Repository = "https://github.com/stavsap/comfyui-ollama"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "stavsap"
 DisplayName = "comfyui-ollama"
 Icon = ""
