@@ -7,6 +7,7 @@ import base64
 from io import BytesIO
 from server import PromptServer
 from aiohttp import web
+from pprint import pprint
 
 @PromptServer.instance.routes.post("/ollama/get_models")
 async def get_models_endpoint(request):
@@ -70,7 +71,9 @@ request query params:
 
         response = client.generate(model=model, prompt=query, images=images_b64, keep_alive=str(keep_alive) + "m")
 
-
+        if debug:
+            print("[Ollama Vision]\nResponse:\n")
+            pprint(response)
 
         return (response['response'],)
 
@@ -119,23 +122,8 @@ request query params:
         response = client.generate(model=model, prompt=prompt, keep_alive=str(keep_alive) + "m")
 
         if debug == "enable":
-                print(f"""\n[Ollama Generate]
-response:
-
-- model: {response["model"]}
-- created_at: {response["created_at"]}
-- done: {response["done"]}
-- eval_duration: {response["eval_duration"]}
-- load_duration: {response["load_duration"]}
-- eval_count: {response["eval_count"]}
-- eval_duration: {response["eval_duration"]}
-- prompt_eval_duration: {response["prompt_eval_duration"]}
-
-- response: {response["response"]}
-
-- context: {response["context"]}
-
-""")
+                print("[Ollama Generate]\nResponse:\n")
+                pprint(response)
 
         return (response['response'],)
 
@@ -230,29 +218,14 @@ request query params:
 """)
 
         response = client.generate(model=model, system=system, prompt=prompt, context=context, options=options, keep_alive=str(keep_alive) + "m")
+        if debug:
+            print("[Ollama Generate Advance]\nResponse:\n")
+            pprint(response)
 
         if keep_context:
             self.saved_context = response["context"]
 
-        if debug:
-            print(f"""\n[Ollama Generate Advance]
-response:
-
-- model: {response["model"]}
-- created_at: {response["created_at"]}
-- done: {response["done"]}
-- eval_duration: {response["eval_duration"]}
-- load_duration: {response["load_duration"]}
-- eval_count: {response["eval_count"]}
-- eval_duration: {response["eval_duration"]}
-- prompt_eval_duration: {response["prompt_eval_duration"]}
-
-- response: {response["response"]}
-
-- context: {response["context"]}
-
-""")
-        return (response['response'],response['context'],)
+        return (response['response'], response['context'],)
 
 NODE_CLASS_MAPPINGS = {
     "OllamaVision": OllamaVision,
