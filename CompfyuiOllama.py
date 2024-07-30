@@ -262,12 +262,10 @@ class OllamaSaveContext:
 
 
 class OllamaLoadContext:
-
     def __init__(self):
         self._base_dir = os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "saved_context"
     @classmethod
     def INPUT_TYPES(s):
-        print("----- INPUT_TYPES ---------")
         input_dir = os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "saved_context"
         files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f)) and f != ".keep"]
         return {"required":
