@@ -1,3 +1,11 @@
+30-07-2024
+
+Add 2 new Nodes:
+
+- OllamaSaveContext: will save context from OllamaGenerateAdvance to a `png` file in saved_context folder.
+- OllamaLoadContext: will load context for OllamaGenerateAdvance from a `png` files in saved_context folder.
+- `context` input in OllamaGenerateAdvance node now can handle string also.
+
 18-06-2024
 
 - Add `keep_context` option in OllamaGenerateAdvance, this flag will preserve context from the current run in the node itself.

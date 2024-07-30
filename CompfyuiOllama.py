@@ -1,14 +1,15 @@
 import random
 
 from ollama import Client
-from PIL import Image
 import numpy as np
 import base64
 from io import BytesIO
 from server import PromptServer
 from aiohttp import web
 from pprint import pprint
-
+from PIL import Image
+from PIL.PngImagePlugin import PngInfo
+import os
 @PromptServer.instance.routes.post("/ollama/get_models")
 async def get_models_endpoint(request):
     data = await request.json()
@@ -168,8 +169,8 @@ class OllamaGenerateAdvance:
             }
         }
 
-    RETURN_TYPES = ("STRING","STRING",)
-    RETURN_NAMES = ("response","context",)
+    RETURN_TYPES = ("STRING", "STRING",)
+    RETURN_NAMES = ("response", "context",)
     FUNCTION = "ollama_generate_advance"
     CATEGORY = "Ollama"
 
@@ -204,6 +205,10 @@ class OllamaGenerateAdvance:
             "tfs_z":tfs_z,
         }
 
+        if context != None and isinstance(context, str):
+            string_list = context.split(',')
+            context = [int(item.strip()) for item in string_list]
+
         if keep_context and context == None:
             context = self.saved_context
 
@@ -227,14 +232,72 @@ request query params:
 
         return (response['response'], response['context'],)
 
+class OllamaSaveContext:
+    def __init__(self):
+        self._base_dir = os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "saved_context"
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":
+                    {"context": ("STRING", {"forceInput": True}, ),
+                     "filename": ("STRING", {"default": "context"})},
+                }
+
+    RETURN_TYPES = ()
+    FUNCTION = "ollama_save_context"
+
+    OUTPUT_NODE = True
+    CATEGORY = "Ollama"
+
+    def ollama_save_context(self, filename, context=None):
+        path = self._base_dir + os.path.sep + filename
+        metadata = PngInfo()
+
+        metadata.add_text("context", ','.join(map(str, context)))
+
+        image = Image.new('RGB', (100, 100), (255, 255, 255))  # Creates a 100x100 white image
+
+        image.save(path+".png", pnginfo=metadata)
+
+        return {"ui": {"context": context}}
+
+
+class OllamaLoadContext:
+
+    def __init__(self):
+        self._base_dir = os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "saved_context"
+    @classmethod
+    def INPUT_TYPES(s):
+        print("----- INPUT_TYPES ---------")
+        input_dir = os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "saved_context"
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f)) and f != ".keep"]
+        return {"required":
+                    {"image": (files, {})},
+                }
+
+    CATEGORY = "Ollama"
+
+    RETURN_NAMES = ("context",)
+    RETURN_TYPES = ("STRING",)
+    FUNCTION = "ollama_load_context"
+
+    def ollama_load_context(self, context_file):
+        with Image.open(self._base_dir + os.path.sep + context_file) as img:
+            info = img.info
+            res = info.get('context', '')
+        return (res,)
+
 NODE_CLASS_MAPPINGS = {
     "OllamaVision": OllamaVision,
     "OllamaGenerate": OllamaGenerate,
     "OllamaGenerateAdvance": OllamaGenerateAdvance,
+    "OllamaSaveContext": OllamaSaveContext,
+    "OllamaLoadContext": OllamaLoadContext,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "OllamaVision": "Ollama Vision",
     "OllamaGenerate": "Ollama Generate",
     "OllamaGenerateAdvance": "Ollama Generate Advance",
+    "OllamaSaveContext": "Ollama Save Context",
+    "OllamaLoadContext": "Ollama Load Context",
 }
