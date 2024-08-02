@@ -269,7 +269,7 @@ class OllamaLoadContext:
         input_dir = os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "saved_context"
         files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f)) and f != ".keep"]
         return {"required":
-                    {"image": (files, {})},
+                    {"context_file": (files, {})},
                 }
 
     CATEGORY = "Ollama"
