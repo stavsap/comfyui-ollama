@@ -157,10 +157,10 @@ class OllamaGenerateAdvance:
                     "title":"system"
                 }),
                 "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
-                "top_k": ("FLOAT", {"default": 40, "min": 0, "max": 100, "step": 1}),
+                "top_k": ("INT", {"default": 40, "min": 0, "max": 100, "step": 1}),
                 "top_p": ("FLOAT", {"default": 0.9, "min": 0, "max": 1, "step": 0.05}),
                 "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.05}),
-                "num_predict": ("FLOAT", {"default": -1, "min": -2, "max": 2048, "step": 1}),
+                "num_predict": ("INT", {"default": -1, "min": -2, "max": 2048, "step": 1}),
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
                 "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
                 "keep_context": ("BOOLEAN", {"default": False}),
