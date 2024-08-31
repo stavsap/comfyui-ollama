@@ -1,3 +1,7 @@
+31-08-2024:
+
+Merge change `top_k` and `num_predict` params in **OllamaAdvanced** to be INT instead FLOAT.
+
 30-07-2024
 
 Add 2 new Nodes:
