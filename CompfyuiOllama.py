@@ -32,13 +32,13 @@ class OllamaVision:
                     "multiline": True,
                     "default": "describe the image"
                 }),
-                "debug": (["enable", "disable"],),
                 "url": ("STRING", {
                     "multiline": False,
                     "default": "http://127.0.0.1:11434"
                 }),
                 "model": ((), {}),
-                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),                
+                "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
+                "debug": (["enable", "disable"],),
             },
         }
 
@@ -72,7 +72,7 @@ request query params:
 
         response = client.generate(model=model, prompt=query, images=images_b64, keep_alive=str(keep_alive) + "m")
 
-        if debug:
+        if debug == "enable":
             print("[Ollama Vision]\nResponse:\n")
             pprint(response)
 
@@ -91,13 +91,13 @@ class OllamaGenerate:
                     "multiline": True,
                     "default": "What is Art?"
                 }),
-                "debug": (["enable", "disable"],),
                 "url": ("STRING", {
                     "multiline": False,
                     "default": "http://127.0.0.1:11434"
                 }),
                 "model": ((), {}),
                 "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
+                "debug": (["enable", "disable"],),
             },
         }
 
@@ -145,7 +145,6 @@ class OllamaGenerateAdvance:
                     "multiline": True,
                     "default": "What is Art?"
                 }),
-                "debug": ("BOOLEAN", {"default": False}),
                 "url": ("STRING", {
                     "multiline": False,
                     "default": "http://127.0.0.1:11434"
@@ -164,6 +163,7 @@ class OllamaGenerateAdvance:
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
                 "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
                 "keep_context": ("BOOLEAN", {"default": False}),
+                "debug": ("BOOLEAN", {"default": False}),
             },"optional": {
                 "context": ("STRING", {"forceInput": True}),
             }
