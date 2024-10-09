@@ -2,7 +2,7 @@
 
 Add out put format `text` or `json` in all generate nodes.
 
-(might be breaking change for existing workflows)
+(should be compatible with existing workflows)
 
 31-08-2024:
 

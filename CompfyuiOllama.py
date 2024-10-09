@@ -40,7 +40,7 @@ class OllamaVision:
                 }),
                 "model": ((), {}),
                 "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
-                "format": (["text", "json"],),
+                "format": (["text", "json",''],),
             },
         }
 
@@ -103,7 +103,7 @@ class OllamaGenerate:
                 }),
                 "model": ((), {}),
                 "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
-                "format": (["text", "json"],),
+                "format": (["text", "json",''],),
             },
         }
 
@@ -173,7 +173,7 @@ class OllamaGenerateAdvance:
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
                 "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
                 "keep_context": ("BOOLEAN", {"default": False}),
-                "format": (["text", "json"],),
+                "format": (["text", "json",''],),
             },"optional": {
                 "context": ("STRING", {"forceInput": True}),
             }
