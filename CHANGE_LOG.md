@@ -1,3 +1,9 @@
+09-10-2024:
+
+Add out put format `text` or `json` in all generate nodes.
+
+(might be breaking change for existing workflows)
+
 31-08-2024:
 
 Merge change `top_k` and `num_predict` params in **OllamaAdvanced** to be INT instead FLOAT.
