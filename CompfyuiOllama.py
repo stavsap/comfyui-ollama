@@ -26,6 +26,7 @@ class OllamaVision:
 
     @classmethod
     def INPUT_TYPES(s):
+        seed = random.randint(1, 2 ** 31)
         return {
             "required": {
                 "images": ("IMAGE",),
@@ -39,6 +40,7 @@ class OllamaVision:
                     "default": "http://127.0.0.1:11434"
                 }),
                 "model": ((), {}),
+                "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
                 "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
                 "format": (["text", "json",''],),
             },
@@ -49,7 +51,7 @@ class OllamaVision:
     FUNCTION = "ollama_vision"
     CATEGORY = "Ollama"
 
-    def ollama_vision(self, images, query, debug, url, model, keep_alive, format):
+    def ollama_vision(self, images, query, debug, url, model, seed, keep_alive, format):
         images_b64 = []
 
         if format == "text":
