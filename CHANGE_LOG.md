@@ -1,3 +1,7 @@
+19-10-2024:
+
+Add seed input to OllamaVision node.
+
 09-10-2024:
 
 Add out put format `text` or `json` in all generate nodes.
