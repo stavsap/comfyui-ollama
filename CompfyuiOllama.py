@@ -40,9 +40,9 @@ class OllamaVision:
                     "default": "http://127.0.0.1:11434"
                 }),
                 "model": ((), {}),
-                "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
                 "keep_alive": ("INT", {"default": 5, "min": 0, "max": 60, "step": 5}),
                 "format": (["text", "json",''],),
+                "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
             },
         }
 
