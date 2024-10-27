@@ -14,6 +14,8 @@ Install ollama server on the desired host
   <img src="https://img.shields.io/badge/v0.3.14-green.svg?style=for-the-badge&labelColor=gray&label=Ollama&color=blue" alt=""/>
 </a>
 
+<a href="https://hub.docker.com/r/ollama/ollama" target="_blank">Docker Installation</a>
+
 <table>
 <tr>
 <td> 
