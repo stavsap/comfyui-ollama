@@ -38,38 +38,6 @@ NVIDIA GPU
 docker run -d -p 11434:11434 --gpus=all -v ollama:/root/.ollama --name ollama  ollama/ollama
 ```
 
-<table>
-<tr>
-<td> 
-
-<a href="https://ollama.ai/" target="_blank">Local Installation</a>
-
-</td> 
-
-<td> 
-
-<a href="https://hub.docker.com/r/ollama/ollama" target="_blank">Docker Installation</a>
-
-</td>
-</tr>
-<tr>
-<td>
-
-
-
-
-
-</td>
-<td>
-
-
-
-
-
-</td>
-</tr>
-</table>
-
 Use the [compfyui manager](https://github.com/ltdrdata/ComfyUI-Manager) "Custom Node Manager":
 
 ![pic](.meta/InstallViaManager.png)
