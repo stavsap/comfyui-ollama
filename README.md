@@ -6,6 +6,8 @@ Integrate the power of LLMs into ComfyUI workflows easily or just experiment wit
 
 To use this properly, you would need a running Ollama server reachable from the host that is running ComfyUI.
 
+<a href="https://www.buymeacoffee.com/stavsapq" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="40" width="174"></a>
+
 ## Installation
 
 Install ollama server on the desired host
