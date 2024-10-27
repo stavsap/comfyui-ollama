@@ -8,7 +8,7 @@ To use this properly, you would need a running Ollama server reachable from the 
 
 ## Installation
 
-Install ollama on the desired host
+Install ollama server on the desired host
 
 <a href="https://ollama.com/" target="_blank">
   <img src="https://img.shields.io/badge/v0.3.4-green.svg?style=for-the-badge&labelColor=gray&label=Ollama&color=blue" alt=""/>
