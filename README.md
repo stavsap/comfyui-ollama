@@ -2,7 +2,7 @@
 
 Custom [ComfyUI](https://github.com/comfyanonymous/ComfyUI) Nodes for interacting with [Ollama](https://ollama.com/) using the [ollama python client](https://github.com/ollama/ollama-python).
 
-Integrate the power of LLMs into ComfyUI workflows easily or just experiment with GPT.
+Integrate the power of LLMs into ComfyUI workflows easily or just experiment with LLM inference.
 
 To use this properly, you would need a running Ollama server reachable from the host that is running ComfyUI.
 
