@@ -14,7 +14,29 @@ Install ollama server on the desired host
   <img src="https://img.shields.io/badge/v0.3.14-green.svg?style=for-the-badge&labelColor=gray&label=Ollama&color=blue" alt=""/>
 </a>
 
+<a href="https://ollama.com/download/Ollama-darwin.zip" target="_blank">Download for macOS</a>
+
+<a href="https://ollama.com/download/OllamaSetup.exe" target="_blank">Download for Windows</a>
+
+Install on Linux
+
+```shell 
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
 <a href="https://hub.docker.com/r/ollama/ollama" target="_blank">Docker Installation</a>
+
+CPU only
+
+```shell
+docker run -d -p 11434:11434 -v ollama:/root/.ollama --name ollama ollama/ollama
+```
+
+NVIDIA GPU
+
+```shell
+docker run -d -p 11434:11434 --gpus=all -v ollama:/root/.ollama --name ollama  ollama/ollama
+```
 
 <table>
 <tr>
@@ -33,32 +55,16 @@ Install ollama server on the desired host
 <tr>
 <td>
 
-<a href="https://ollama.com/download/Ollama-darwin.zip" target="_blank">Download for macOS</a>
 
-<a href="https://ollama.com/download/OllamaSetup.exe" target="_blank">Download for Windows</a>
 
-Install on Linux
 
-```shell 
-curl -fsSL https://ollama.com/install.sh | sh
-```
 
 </td>
 <td>
 
 
 
-CPU only
 
-```shell
-docker run -d -p 11434:11434 -v ollama:/root/.ollama --name ollama ollama/ollama
-```
-
-NVIDIA GPU
-
-```shell
-docker run -d -p 11434:11434 --gpus=all -v ollama:/root/.ollama --name ollama  ollama/ollama
-```
 
 </td>
 </tr>
