@@ -11,7 +11,7 @@ To use this properly, you would need a running Ollama server reachable from the 
 Install ollama on the desired host
 
 <a href="https://ollama.com/" target="_blank">
-  <img src="https://img.shields.io/badge/v0.3.0-green.svg?style=for-the-badge&labelColor=gray&label=Ollama&color=blue" alt=""/>
+  <img src="https://img.shields.io/badge/v0.3.4-green.svg?style=for-the-badge&labelColor=gray&label=Ollama&color=blue" alt=""/>
 </a>
 
 <table>
