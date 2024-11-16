@@ -1,3 +1,7 @@
+16-11-2024:
+
+Support `-1` value in `keep_alive`.
+
 19-10-2024:
 
 Add seed input to OllamaVision node.
