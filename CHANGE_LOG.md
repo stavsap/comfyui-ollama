@@ -1,3 +1,7 @@
+20-11-2024:
+
+Support step of 1 in `keep_alive`.
+
 16-11-2024:
 
 Support `-1` value in `keep_alive`.

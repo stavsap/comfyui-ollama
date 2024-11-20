@@ -40,7 +40,7 @@ class OllamaVision:
                     "default": "http://127.0.0.1:11434"
                 }),
                 "model": ((), {}),
-                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 60, "step": 5}),
+                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 60, "step": 1}),
                 "format": (["text", "json",''],),
                 "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
             },
@@ -104,7 +104,7 @@ class OllamaGenerate:
                     "default": "http://127.0.0.1:11434"
                 }),
                 "model": ((), {}),
-                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 60, "step": 5}),
+                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 60, "step": 1}),
                 "format": (["text", "json",''],),
             },
         }
@@ -173,7 +173,7 @@ class OllamaGenerateAdvance:
                 "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.05}),
                 "num_predict": ("INT", {"default": -1, "min": -2, "max": 2048, "step": 1}),
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
-                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 60, "step": 5}),
+                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 60, "step": 1}),
                 "keep_context": ("BOOLEAN", {"default": False}),
                 "format": (["text", "json",''],),
             },"optional": {
