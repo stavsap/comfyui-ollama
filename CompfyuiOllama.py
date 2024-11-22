@@ -3,6 +3,7 @@ import random
 import json
 from typing import Optional
 
+from httpx import request
 from ollama import Client
 import numpy as np
 import base64
@@ -319,6 +320,8 @@ class OllamaOptions:
     @classmethod
     def INPUT_TYPES(s):
         seed = random.randint(1, 2 ** 31)
+
+
         return {
             "required": {
                 "enable_mirostat": ("BOOLEAN", {"default": False}),
@@ -404,19 +407,19 @@ class OllamaGenerateV2:
             "required": {
                 "system": ("STRING", {
                     "multiline": True,
-                    "default": "you are an AI artist"
+                    "default": "You are an AI artist."
                 }),
                 "prompt": ("STRING", {
                     "multiline": True,
-                    "default": "what is art?"
+                    "default": "What is art?"
                 }),
                 "keep_context": ("BOOLEAN", {"default": False}),
                 "format": (["text", "json", ''],),
 
             },
             "optional": {
-                "options": ("OLLAMA_OPTIONS", {"forceInput": False},),
                 "connectivity": ("OLLAMA_CONNECTIVITY", {"forceInput": False},),
+                "options": ("OLLAMA_OPTIONS", {"forceInput": False},),
                 "images": ("IMAGE", {"forceInput": False},),
                 "context": ("OLLAMA_CONTEXT", {"forceInput": False},),
                 "meta": ("OLLAMA_META", {"forceInput": False},),
@@ -427,6 +430,27 @@ class OllamaGenerateV2:
     RETURN_NAMES = ("result", "context", "meta",)
     FUNCTION = "ollama_generate_v2"
     CATEGORY = "Ollama"
+
+    def get_request_options(self, options):
+        response = None
+
+        if options is None:
+            return response
+
+        enablers = ['enable_mirostat', 'enable_mirostat_eta',
+                    'enable_mirostat_tau', 'enable_mirostat_eta',
+                    'enable_num_ctx', 'enable_repeat_last_n', 'enable_repeat_penalty',
+                    'enable_temperature', 'enable_seed', 'enable_tfs_z', 'enable_num_predict',
+                    'enable_top_k', 'enable_top_p', 'enable_min_p']
+
+        for enabler in enablers:
+            if options[enabler]:
+                if response is None:
+                    response = {}
+                key = enabler.replace("enable_", "")
+                response[key] = options[key]
+
+        return response
 
     def ollama_generate_v2(self, system, prompt, format, keep_context, context = None, options=None, connectivity=None, images=None, meta=None):
 
@@ -454,8 +478,29 @@ class OllamaGenerateV2:
             context = self.saved_context
 
         keep_alive_unit =  'm' if meta['connectivity']['keep_alive_unit'] == "minutes" else 'h'
-        response = client.generate(model=meta['connectivity']['model'], system=system, prompt=prompt, context=context, options=options,
-                                   keep_alive=str(meta['connectivity']['keep_alive']) + keep_alive_unit, format=format)
+        request_options = self.get_request_options(options)
+
+        images_b64 = None
+        if images is not None:
+            images_b64 = []
+            for (batch_number, image) in enumerate(images):
+                i = 255. * image.cpu().numpy()
+                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+                buffered = BytesIO()
+                img.save(buffered, format="PNG")
+                img_bytes = base64.b64encode(buffered.getvalue())
+                images_b64.append(str(img_bytes, 'utf-8'))
+
+        response = client.generate(
+            model=meta['connectivity']['model'],
+            system=system,
+            prompt=prompt,
+            images=images_b64,
+            context=context,
+            options=request_options,
+            keep_alive=str(meta['connectivity']['keep_alive']) + keep_alive_unit,
+            format=format,
+        )
 
         if keep_context:
             self.saved_context = response["context"]
@@ -478,8 +523,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OllamaVision": "Ollama Vision",
     "OllamaGenerate": "Ollama Generate",
     "OllamaGenerateAdvance": "Ollama Generate Advance",
-    "OllamaOptions": "Ollama Options",
-    "OllamaConnectivity": "Ollama Connectivity",
+    "OllamaOptions": "Ollama Options V2",
+    "OllamaConnectivity": "Ollama Connectivity V2",
     "OllamaGenerateV2": "Ollama Generate V2",
     "OllamaSaveContext": "Ollama Save Context",
     "OllamaLoadContext": "Ollama Load Context",
