@@ -1,5 +1,8 @@
 import random
 
+import json
+from typing import Optional
+
 from ollama import Client
 import numpy as np
 import base64
@@ -299,10 +302,107 @@ class OllamaLoadContext:
             res = info.get('context', '')
         return (res,)
 
+
+class OllamaOptions:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        seed = random.randint(1, 2 ** 31)
+        return {
+            "required": {
+                "format": (["text", "json",''],),
+                "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
+            },
+        }
+
+    RETURN_TYPES = ("OLLAMA_OPTIONS",)
+    RETURN_NAMES = ("options",)
+    FUNCTION = "ollama_options"
+    CATEGORY = "Ollama"
+
+    def ollama_options(self, format, seed):
+        data = {
+            "format": format,
+            "seed": seed,
+        }
+        return (data,)
+
+class OllamaConnectivity:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "url": ("STRING", {
+                    "multiline": False,
+                    "default": "http://127.0.0.1:11434"
+                }),
+                "model": ((), {}),
+                "keep_alive": ("INT", {"default": 5, "min": -1, "max": 120, "step": 1}),
+                "keep_alive_unit": (["minutes", "hours"],),
+                "debug": ("BOOLEAN", {"default": False}),
+            },
+        }
+
+    RETURN_TYPES = ("OLLAMA_CONNECTIVITY",)
+    RETURN_NAMES = ("connection",)
+    FUNCTION = "ollama_connectivity"
+    CATEGORY = "Ollama"
+
+    def ollama_connectivity(self, url, model, keep_alive, keep_alive_unit, debug):
+
+        data = {
+            "url": url,
+            "model": model,
+            "keep_alive": keep_alive,
+            "keep_alive_unit": keep_alive_unit,
+            "debug": debug
+        }
+
+        if debug:
+            pprint(data)
+
+        return (data,)
+
+class OllamaGenerateV2:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "options": ("OLLAMA_OPTIONS",),
+                "connectivity": ("OLLAMA_CONNECTIVITY",),
+                "prompt": ("STRING", {
+                    "multiline": True,
+                    "default": "what is art?"
+                }),
+            },
+            "optional":{
+                "images": ("IMAGE", {"forceInput": False},),
+                "meta": ("OLLAMA_META", {"forceInput": False},),
+            }
+        }
+    RETURN_TYPES = ("STRING", "OLLAMA_CONTEXT", "OLLAMA_META",)
+    RETURN_NAMES = ("result", "context", "meta",)
+    FUNCTION = "ollama_generate_v2"
+    CATEGORY = "Ollama"
+
+    def ollama_generate_v2(self, options, connectivity,prompt, images = None, meta = None):
+        return prompt, [1, 2, 3, 4], {"options":options, "connectivity":connectivity},
+
 NODE_CLASS_MAPPINGS = {
     "OllamaVision": OllamaVision,
     "OllamaGenerate": OllamaGenerate,
     "OllamaGenerateAdvance": OllamaGenerateAdvance,
+    "OllamaOptions": OllamaOptions,
+    "OllamaConnectivity": OllamaConnectivity,
+    "OllamaGenerateV2": OllamaGenerateV2,
     "OllamaSaveContext": OllamaSaveContext,
     "OllamaLoadContext": OllamaLoadContext,
 }
@@ -311,6 +411,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OllamaVision": "Ollama Vision",
     "OllamaGenerate": "Ollama Generate",
     "OllamaGenerateAdvance": "Ollama Generate Advance",
+    "OllamaOptions": "Ollama Options",
+    "OllamaConnectivity": "Ollama Connectivity",
+    "OllamaGenerateV2": "Ollama Generate V2",
     "OllamaSaveContext": "Ollama Save Context",
     "OllamaLoadContext": "Ollama Load Context",
 }
