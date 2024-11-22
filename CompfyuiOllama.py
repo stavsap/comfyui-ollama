@@ -376,14 +376,15 @@ class OllamaGenerateV2:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "options": ("OLLAMA_OPTIONS",),
-                "connectivity": ("OLLAMA_CONNECTIVITY",),
+
                 "prompt": ("STRING", {
                     "multiline": True,
                     "default": "what is art?"
                 }),
             },
             "optional":{
+                "options": ("OLLAMA_OPTIONS", {"forceInput": False},),
+                "connectivity": ("OLLAMA_CONNECTIVITY", {"forceInput": False},),
                 "images": ("IMAGE", {"forceInput": False},),
                 "meta": ("OLLAMA_META", {"forceInput": False},),
             }
@@ -393,8 +394,20 @@ class OllamaGenerateV2:
     FUNCTION = "ollama_generate_v2"
     CATEGORY = "Ollama"
 
-    def ollama_generate_v2(self, options, connectivity,prompt, images = None, meta = None):
-        return prompt, [1, 2, 3, 4], {"options":options, "connectivity":connectivity},
+    def ollama_generate_v2(self, prompt, options= None, connectivity= None, images = None, meta = None):
+
+        if connectivity is None and meta is None:
+            raise Exception("You must specify connectivity or meta")
+
+        if meta is not None:
+            if connectivity is not None:
+                meta["connectivity"] = connectivity
+            if options is not None:
+                meta["options"] = options
+        else:
+            meta = {"options":options, "connectivity":connectivity}
+
+        return prompt, [1, 2, 3, 4], meta,
 
 NODE_CLASS_MAPPINGS = {
     "OllamaVision": OllamaVision,
