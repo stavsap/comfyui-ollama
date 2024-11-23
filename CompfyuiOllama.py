@@ -433,7 +433,7 @@ class OllamaGenerateV2:
                     "default": "What is art?"
                 }),
                 "keep_context": ("BOOLEAN", {"default": False}),
-                "format": (["text", "json", ''],),
+                "format": (["text", "json"],),
 
             },
             "optional": {
