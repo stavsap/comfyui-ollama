@@ -313,44 +313,58 @@ class OllamaLoadContext:
         return (res,)
 
 
-class OllamaOptions:
+class OllamaOptionsV2:
     def __init__(self):
         pass
 
     @classmethod
     def INPUT_TYPES(s):
         seed = random.randint(1, 2 ** 31)
-
-
         return {
             "required": {
                 "enable_mirostat": ("BOOLEAN", {"default": False}),
                 "mirostat": ("INT", {"default": 0, "min": 0, "max":2, "step": 1}),
+
                 "enable_mirostat_eta": ("BOOLEAN", {"default": False}),
                 "mirostat_eta": ("FLOAT", {"default": 0.1, "min": 0, "step": 0.1}),
+
                 "enable_mirostat_tau": ("BOOLEAN", {"default": False}),
                 "mirostat_tau": ("FLOAT", {"default": 5.0, "min": 0, "step": 0.1}),
+
                 "enable_num_ctx": ("BOOLEAN", {"default": False}),
                 "num_ctx": ("INT", {"default": 2048, "min": 0, "step": 1}),
+
                 "enable_repeat_last_n": ("BOOLEAN", {"default": False}),
                 "repeat_last_n": ("INT", {"default": 64, "min": -1, "max": 64, "step": 1}),
+
                 "enable_repeat_penalty": ("BOOLEAN", {"default": False}),
                 "repeat_penalty": ("FLOAT", {"default": 1.1, "min": 0, "max": 2, "step": 0.05}),
+
                 "enable_temperature": ("BOOLEAN", {"default": False}),
                 "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.05}),
+
                 "enable_seed": ("BOOLEAN", {"default": False}),
                 "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),
+
+                "enable_stop": ("BOOLEAN", {"default": False}),
+                "stop": ("STRING", {"default": "", "multiline": False,}),
+
                 "enable_tfs_z": ("BOOLEAN", {"default": False}),
                 "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
+
                 "enable_num_predict": ("BOOLEAN", {"default": False}),
                 "num_predict": ("INT", {"default": -1, "min": -2, "max": 2048, "step": 1}),
+
                 "enable_top_k": ("BOOLEAN", {"default": False}),
                 "top_k": ("INT", {"default": 40, "min": 0, "max": 100, "step": 1}),
+
                 "enable_top_p": ("BOOLEAN", {"default": False}),
                 "top_p": ("FLOAT", {"default": 0.9, "min": 0, "max": 1, "step": 0.05}),
+
                 "enable_min_p": ("BOOLEAN", {"default": False}),
                 "min_p": ("FLOAT", {"default": 0.0, "min": 0, "max": 1, "step": 0.05}),
-                "debug": ("BOOLEAN", {"default": False}),
+
+                "debug": ("BOOLEAN", {"default": False}), # this is for nodes code usage only, not ollama api.
             },
         }
 
@@ -360,10 +374,15 @@ class OllamaOptions:
     CATEGORY = "Ollama"
 
     def ollama_options(self, **kargs):
-        pprint(kargs)
+
+        if kargs['debug']:
+            print("--- ollama options v2 dump\n")
+            pprint(kargs)
+            print("---------------------------------------------------------")
+
         return (kargs,)
 
-class OllamaConnectivity:
+class OllamaConnectivityV2:
     def __init__(self):
         pass
 
@@ -440,7 +459,7 @@ class OllamaGenerateV2:
         enablers = ['enable_mirostat', 'enable_mirostat_eta',
                     'enable_mirostat_tau', 'enable_mirostat_eta',
                     'enable_num_ctx', 'enable_repeat_last_n', 'enable_repeat_penalty',
-                    'enable_temperature', 'enable_seed', 'enable_tfs_z', 'enable_num_predict',
+                    'enable_temperature', 'enable_seed', 'enable_stop', 'enable_tfs_z', 'enable_num_predict',
                     'enable_top_k', 'enable_top_p', 'enable_min_p']
 
         for enabler in enablers:
@@ -455,17 +474,24 @@ class OllamaGenerateV2:
     def ollama_generate_v2(self, system, prompt, format, keep_context, context = None, options=None, connectivity=None, images=None, meta=None):
 
         if connectivity is None and meta is None:
-            raise Exception("You must input connectivity or meta")
+            raise Exception("Required input connectivity or meta.")
+
+        if connectivity is None and meta['connectivity'] is None:
+            raise Exception("Required input connectivity or connectivity in meta.")
 
         if meta is not None:
-            if connectivity is not None: # bypass the current connectivity
+            if connectivity is not None: # bypass the current meta connectivity
                 meta["connectivity"] = connectivity
-            if options is not None: # set/bypass the current options
+            if options is not None: # bypass the current meta options
                 meta["options"] = options
         else:
             meta = {"options": options, "connectivity": connectivity}
 
-        client = Client(host=meta['connectivity']['url'])
+        url = meta['connectivity']['url']
+        model = meta['connectivity']['model']
+        client = Client(host=url)
+
+        debug_print = True if meta['options'] is not None and meta['options']['debug'] else False
 
         if format == "text":
             format = ''
@@ -478,6 +504,8 @@ class OllamaGenerateV2:
             context = self.saved_context
 
         keep_alive_unit =  'm' if meta['connectivity']['keep_alive_unit'] == "minutes" else 'h'
+        request_keep_alive = str(meta['connectivity']['keep_alive']) + keep_alive_unit
+
         request_options = self.get_request_options(options)
 
         images_b64 = None
@@ -491,19 +519,42 @@ class OllamaGenerateV2:
                 img_bytes = base64.b64encode(buffered.getvalue())
                 images_b64.append(str(img_bytes, 'utf-8'))
 
+        if debug_print:
+            print(f"""
+--- ollama generate v2 request: 
+
+url: {url}
+model: {model}
+system: {system}
+prompt: {prompt}
+images: {0 if images_b64 is None else len(images_b64)}
+context: {context}
+options: {request_options}
+keep alive: {request_keep_alive}
+format: {format}
+---------------------------------------------------------
+""")
+
         response = client.generate(
-            model=meta['connectivity']['model'],
+            model=model,
             system=system,
             prompt=prompt,
             images=images_b64,
             context=context,
             options=request_options,
-            keep_alive=str(meta['connectivity']['keep_alive']) + keep_alive_unit,
+            keep_alive= request_keep_alive,
             format=format,
         )
 
+        if debug_print:
+            print("\n--- ollama generate v2 response:")
+            pprint(response)
+            print("---------------------------------------------------------")
+
         if keep_context:
             self.saved_context = response["context"]
+            if debug_print:
+                print("saving context to node memory.")
 
         return response['response'], response['context'], meta,
 
@@ -512,8 +563,8 @@ NODE_CLASS_MAPPINGS = {
     "OllamaVision": OllamaVision,
     "OllamaGenerate": OllamaGenerate,
     "OllamaGenerateAdvance": OllamaGenerateAdvance,
-    "OllamaOptions": OllamaOptions,
-    "OllamaConnectivity": OllamaConnectivity,
+    "OllamaOptionsV2": OllamaOptionsV2,
+    "OllamaConnectivityV2": OllamaConnectivityV2,
     "OllamaGenerateV2": OllamaGenerateV2,
     "OllamaSaveContext": OllamaSaveContext,
     "OllamaLoadContext": OllamaLoadContext,
@@ -523,8 +574,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OllamaVision": "Ollama Vision",
     "OllamaGenerate": "Ollama Generate",
     "OllamaGenerateAdvance": "Ollama Generate Advance",
-    "OllamaOptions": "Ollama Options V2",
-    "OllamaConnectivity": "Ollama Connectivity V2",
+    "OllamaOptionsV2": "Ollama Options V2",
+    "OllamaConnectivityV2": "Ollama Connectivity V2",
     "OllamaGenerateV2": "Ollama Generate V2",
     "OllamaSaveContext": "Ollama Save Context",
     "OllamaLoadContext": "Ollama Load Context",
