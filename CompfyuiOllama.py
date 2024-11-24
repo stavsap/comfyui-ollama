@@ -16,7 +16,7 @@ async def get_models_endpoint(request):
     data = await request.json()
     url = data.get("url")
     client = Client(host=url)
-    models = [model['name'] for model in client.list().get('models', [])]
+    models = [model['model'] for model in client.list().get('models', [])]
     
     return web.json_response(models)
 
