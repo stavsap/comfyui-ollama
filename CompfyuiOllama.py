@@ -14,11 +14,18 @@ import os
 @PromptServer.instance.routes.post("/ollama/get_models")
 async def get_models_endpoint(request):
     data = await request.json()
+
     url = data.get("url")
     client = Client(host=url)
-    models = [model['name'] for model in client.list().get('models', [])]
-    
-    return web.json_response(models)
+
+    models = client.list().get('models', [])
+
+    try:
+        models = [model['model'] for model in models]
+        return web.json_response(models)
+    except Exception as e:
+        models = [model['name'] for model in models]
+        return web.json_response(models)
 
 class OllamaVision:
     def __init__(self):
