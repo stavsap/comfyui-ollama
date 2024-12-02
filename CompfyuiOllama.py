@@ -11,6 +11,7 @@ from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 import os
 
+
 @PromptServer.instance.routes.post("/ollama/get_models")
 async def get_models_endpoint(request):
     data = await request.json()
@@ -27,6 +28,7 @@ async def get_models_endpoint(request):
         models = [model['name'] for model in models]
         return web.json_response(models)
 
+ 
 class OllamaVision:
     def __init__(self):
         pass
@@ -59,18 +61,25 @@ class OllamaVision:
     CATEGORY = "Ollama"
 
     def ollama_vision(self, images, query, debug, url, model, seed, keep_alive, format):
-        images_b64 = []
+        images_binary = []
 
         if format == "text":
             format = ''
 
         for (batch_number, image) in enumerate(images):
+            # Convert tensor to numpy array
             i = 255. * image.cpu().numpy()
+            
+            # Create PIL Image
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            
+            # Save to BytesIO buffer
             buffered = BytesIO()
             img.save(buffered, format="PNG")
-            img_bytes = base64.b64encode(buffered.getvalue())
-            images_b64.append(str(img_bytes, 'utf-8'))
+            
+            # Get binary data
+            img_binary = buffered.getvalue()
+            images_binary.append(img_binary)
 
         client = Client(host=url)
 
@@ -84,7 +93,7 @@ request query params:
 
 """)
 
-        response = client.generate(model=model, prompt=query, images=images_b64, keep_alive=str(keep_alive) + "m", format=format)
+        response = client.generate(model=model, prompt=query, images=images_binary, keep_alive=str(keep_alive) + "m", format=format)
 
         if debug == "enable":
             print("[Ollama Vision]\nResponse:\n")
