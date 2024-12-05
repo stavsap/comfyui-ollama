@@ -1,3 +1,11 @@
+04-12-2024:
+
+Fix image base64 to binary issue.
+
+25-11-2024:
+
+Fix some bug in fetching model names.
+
 20-11-2024:
 
 Support step of 1 in `keep_alive`.
