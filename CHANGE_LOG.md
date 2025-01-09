@@ -1,3 +1,7 @@
+09-01-2025
+
+Update python ollama client 0.4.2 -> 0.4.5
+
 04-12-2024:
 
 Fix image base64 to binary issue.
