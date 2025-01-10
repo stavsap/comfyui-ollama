@@ -54,7 +54,41 @@ Search `ollama` and select the one by `stavsap`
 2. `pip install -r requirements.txt`
 3. Start/restart ComfyUI
 
-### Nodes
+## Nodes
+
+## V2 Release
+
+![pic](.meta/v2.png)
+
+### OllamaGenerateV2
+
+A node that provides ability to set the system prompt and the prompt.
+
+Ability to save context locally in the node `enable/disable`
+
+Inputs:
+
+- OllamaConnectivityV2 (optional)
+- OllamaOptionsV2 (optional)
+- images (optional)
+- context (optional), a context from other OllamaConnectivityV2
+- meta (optional), passing metadata of the OllamaConnectivityV2 and OllamaOptionsV2 from other OllamaGenerateV2 node.
+
+### OllamaConnectivityV2
+
+A node responsible only fot the connectivity to the ollama server
+
+### OllamaOptionsV2
+
+A node for full control of the ollama api options.
+
+For an option to take effect, each option have also `enable/disable`, enabled options are passed to api call to ollama server.
+
+Ollama API options can be found in [this table](https://github.com/ollama/ollama/blob/main/docs/modelfile.md#valid-parameters-and-values).
+
+**Note**: There is an additional option `debug` that enables debug print in the cli, its not part of ollama api.
+
+## V1 Release
 
 ### OllamaVision
 
