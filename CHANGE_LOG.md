@@ -1,3 +1,15 @@
+10-01-2025:
+
+V2 release.
+
+Added nodes:
+
+- OllamaGenerateV2
+
+- OllamaConnectivityV2
+
+- OllamaOptionsV2
+
 09-01-2025
 
 Update python ollama client 0.4.2 -> 0.4.5

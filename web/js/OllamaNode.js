@@ -3,7 +3,7 @@ import { app } from "/scripts/app.js";
 app.registerExtension({
     name: "Comfy.OllamaNode",
   async beforeRegisterNodeDef(nodeType, nodeData, app) {
-    if (["OllamaGenerate", "OllamaGenerateAdvance", "OllamaVision"].includes(nodeData.name) ) {
+    if (["OllamaGenerate", "OllamaGenerateAdvance", "OllamaVision", "OllamaConnectivityV2"].includes(nodeData.name) ) {
       const originalNodeCreated = nodeType.prototype.onNodeCreated;
       nodeType.prototype.onNodeCreated = async function () {
         if (originalNodeCreated) {
