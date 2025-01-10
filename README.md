@@ -68,11 +68,16 @@ Ability to save context locally in the node `enable/disable`
 
 Inputs:
 
-- OllamaConnectivityV2 (optional)
-- OllamaOptionsV2 (optional)
-- images (optional)
-- context (optional), a context from other OllamaConnectivityV2
-- meta (optional), passing metadata of the OllamaConnectivityV2 and OllamaOptionsV2 from other OllamaGenerateV2 node.
+- **OllamaConnectivityV2** (optional)
+- **OllamaOptionsV2** (optional)
+- **images** (optional)
+- **context** (optional), a context from other OllamaConnectivityV2
+- **meta** (optional), passing metadata of the OllamaConnectivityV2 and OllamaOptionsV2 from other OllamaGenerateV2 node.
+
+**Notes:** 
+
+- For this node to be operational, **OllamaConnectivityV2** or **meta** must be inputed!.
+- If **images** are inputted and a chain of **meta** usage is made, all the **images** need to be passed as well to the next **OllamaConnectivityV2** nodes.
 
 ### OllamaConnectivityV2
 
