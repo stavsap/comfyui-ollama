@@ -1,3 +1,15 @@
+10-01-2025:
+
+V2 release.
+
+Added nodes:
+
+- OllamaGenerateV2
+
+- OllamaConnectivityV2
+
+- OllamaOptionsV2
+
 04-12-2024:
 
 Fix image base64 to binary issue.
