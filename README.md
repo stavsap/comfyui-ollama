@@ -58,6 +58,8 @@ Search `ollama` and select the one by `stavsap`
 
 ## V2 Release
 
+Release of additional V2 Nodes, for more modular and controllable chained flows.
+
 ![pic](.meta/v2.png)
 
 ### OllamaGenerateV2
