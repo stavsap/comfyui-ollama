@@ -76,7 +76,7 @@ Inputs:
 
 **Notes:** 
 
-- For this node to be operational, **OllamaConnectivityV2** or **meta** must be inputed!.
+- For this node to be operational, **OllamaConnectivityV2** or **meta** must be inputted!.
 - If **images** are inputted and a chain of **meta** usage is made, all the **images** need to be passed as well to the next **OllamaConnectivityV2** nodes.
 
 ### OllamaConnectivityV2
