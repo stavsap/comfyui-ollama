@@ -13,7 +13,7 @@ To use this properly, you would need a running Ollama server reachable from the 
 Install ollama server on the desired host
 
 <a href="https://ollama.com/" target="_blank">
-  <img src="https://img.shields.io/badge/v0.4.5-green.svg?style=for-the-badge&labelColor=gray&label=Ollama&color=blue" alt=""/>
+  <img src="https://img.shields.io/badge/v0.5.7-green.svg?style=for-the-badge&labelColor=gray&label=Ollama&color=blue" alt=""/>
 </a>
 
 <a href="https://ollama.com/download/Ollama-darwin.zip" target="_blank">Download for macOS</a>
