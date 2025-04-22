@@ -1,3 +1,7 @@
+22-04-2025:
+
+Fix v2 settings num ctx limit.
+
 10-01-2025:
 
 V2 release.

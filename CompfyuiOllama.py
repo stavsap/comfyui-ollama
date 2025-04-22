@@ -345,7 +345,7 @@ class OllamaOptionsV2:
                 "mirostat_tau": ("FLOAT", {"default": 5.0, "min": 0, "step": 0.1}),
 
                 "enable_num_ctx": ("BOOLEAN", {"default": False}),
-                "num_ctx": ("INT", {"default": 2048, "min": 0, "step": 1}),
+                "num_ctx": ("INT", {"default": 2048, "min": 0, "max": 2 ** 31, "step": 1}),
 
                 "enable_repeat_last_n": ("BOOLEAN", {"default": False}),
                 "repeat_last_n": ("INT", {"default": 64, "min": -1, "max": 64, "step": 1}),
