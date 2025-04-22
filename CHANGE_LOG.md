@@ -1,6 +1,7 @@
 22-04-2025:
 
 Fix v2 settings num ctx limit.
+Update ollama python 0.4.8.
 
 10-01-2025:
 
