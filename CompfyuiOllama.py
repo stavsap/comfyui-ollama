@@ -1,5 +1,5 @@
 import random
-
+import re
 import json
 from typing import Optional
 
@@ -126,6 +126,7 @@ class OllamaGenerate:
                 "model": ((), {}),
                 "keep_alive": ("INT", {"default": 5, "min": -1, "max": 60, "step": 1}),
                 "format": (["text", "json", ''],),
+                "filter_thinking": ("BOOLEAN", {"default": True}),
             },
         }
 
@@ -134,7 +135,7 @@ class OllamaGenerate:
     FUNCTION = "ollama_generate"
     CATEGORY = "Ollama"
 
-    def ollama_generate(self, prompt, debug, url, model, keep_alive, format):
+    def ollama_generate(self, prompt, debug, url, model, keep_alive, format, filter_thinking):
 
         client = Client(host=url)
 
@@ -156,8 +157,12 @@ request query params:
         if debug == "enable":
             print("[Ollama Generate]\nResponse:\n")
             pprint(response)
+        
+        ollama_response_text = response['response']
+        if filter_thinking:
+            ollama_response_text = re.sub(r"<think>.*?</think>\s*", "", ollama_response_text, flags=re.DOTALL | re.IGNORECASE).strip()
 
-        return (response['response'],)
+        return (ollama_response_text,)
 
 
 # https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-completion
@@ -197,6 +202,7 @@ class OllamaGenerateAdvance:
                 "keep_alive": ("INT", {"default": 5, "min": -1, "max": 60, "step": 1}),
                 "keep_context": ("BOOLEAN", {"default": False}),
                 "format": (["text", "json", ''],),
+                "filter_thinking": ("BOOLEAN", {"default": True}),
             }, "optional": {
                 "context": ("STRING", {"forceInput": True}),
             }
@@ -208,7 +214,7 @@ class OllamaGenerateAdvance:
     CATEGORY = "Ollama"
 
     def ollama_generate_advance(self, prompt, debug, url, model, system, seed, top_k, top_p, temperature, num_predict,
-                                tfs_z, keep_alive, keep_context, format, context=None):
+                                tfs_z, keep_alive, keep_context, format, filter_thinking, context=None):
 
         client = Client(host=url)
 
@@ -268,7 +274,11 @@ request query params:
         if keep_context:
             self.saved_context = response["context"]
 
-        return (response['response'], response['context'],)
+        ollama_response_text = response['response']
+        if filter_thinking:
+            ollama_response_text = re.sub(r"<think>.*?</think>\s*", "", ollama_response_text, flags=re.DOTALL | re.IGNORECASE).strip()
+
+        return (ollama_response_text, response['context'],)
 
 
 class OllamaSaveContext:
@@ -445,6 +455,7 @@ class OllamaGenerateV2:
                     "multiline": True,
                     "default": "What is art?"
                 }),
+                "filter_thinking": ("BOOLEAN", {"default": True}),
                 "keep_context": ("BOOLEAN", {"default": False}),
                 "format": (["text", "json"],),
 
@@ -484,7 +495,7 @@ class OllamaGenerateV2:
 
         return response
 
-    def ollama_generate_v2(self, system, prompt, format, keep_context, context = None, options=None, connectivity=None, images=None, meta=None):
+    def ollama_generate_v2(self, system, prompt, filter_thinking, keep_context, format, context = None, options=None, connectivity=None, images=None, meta=None):
 
         if connectivity is None and meta is None:
             raise Exception("Required input connectivity or meta.")
@@ -564,12 +575,16 @@ format: {format}
             pprint(response)
             print("---------------------------------------------------------")
 
+        ollama_response_text = response['response']
+        if filter_thinking:
+            ollama_response_text = re.sub(r"<think>.*?</think>\s*", "", ollama_response_text, flags=re.DOTALL | re.IGNORECASE).strip()
+
         if keep_context:
             self.saved_context = response["context"]
             if debug_print:
                 print("saving context to node memory.")
 
-        return response['response'], response['context'], meta,
+        return ollama_response_text, response['context'], meta,
 
 
 NODE_CLASS_MAPPINGS = {
