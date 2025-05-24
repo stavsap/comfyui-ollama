@@ -160,7 +160,7 @@ request query params:
         
         ollama_response_text = response['response']
         if filter_thinking:
-            ollama_response_text = re.sub(r"<think>.*?</think>\s*", "", ollama_response_text, flags=re.DOTALL | re.IGNORECASE).strip()
+            ollama_response_text = re.sub(r"<(?:think|thinking)>.*?</(?:think|thinking)>\s*", "", ollama_response_text, flags=re.DOTALL | re.IGNORECASE).strip()
 
         return (ollama_response_text,)
 
@@ -276,7 +276,7 @@ request query params:
 
         ollama_response_text = response['response']
         if filter_thinking:
-            ollama_response_text = re.sub(r"<think>.*?</think>\s*", "", ollama_response_text, flags=re.DOTALL | re.IGNORECASE).strip()
+            ollama_response_text = re.sub(r"<(?:think|thinking)>.*?</(?:think|thinking)>\s*", "", ollama_response_text, flags=re.DOTALL | re.IGNORECASE).strip()
 
         return (ollama_response_text, response['context'],)
 
@@ -577,7 +577,7 @@ format: {format}
 
         ollama_response_text = response['response']
         if filter_thinking:
-            ollama_response_text = re.sub(r"<think>.*?</think>\s*", "", ollama_response_text, flags=re.DOTALL | re.IGNORECASE).strip()
+            ollama_response_text = re.sub(r"<(?:think|thinking)>.*?</(?:think|thinking)>\s*", "", ollama_response_text, flags=re.DOTALL | re.IGNORECASE).strip()
 
         if keep_context:
             self.saved_context = response["context"]
