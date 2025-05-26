@@ -1,3 +1,7 @@
+26-05-2025:
+
+Added toggle to strip thinking from response
+
 22-04-2025:
 
 Fix v2 settings num ctx limit.
