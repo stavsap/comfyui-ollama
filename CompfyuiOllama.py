@@ -364,7 +364,7 @@ class OllamaOptionsV2:
                 "repeat_penalty": ("FLOAT", {"default": 1.1, "min": 0, "max": 2, "step": 0.05}),
 
                 "enable_temperature": ("BOOLEAN", {"default": False}),
-                "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.05}),
+                "temperature": ("FLOAT", {"default": 0.8, "min": -10, "max": 10, "step": 0.05}),
 
                 "enable_seed": ("BOOLEAN", {"default": False}),
                 "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1}),

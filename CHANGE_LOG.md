@@ -1,3 +1,7 @@
+10-06-2025:
+
+Increased temperature limits in OptionsV2.
+
 26-05-2025:
 
 Added toggle to strip thinking from response
