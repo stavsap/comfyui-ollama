@@ -87,6 +87,13 @@ class OllamaVision:
 
         client = Client(host=url)
 
+        options = {
+            "format": format,
+            "seed": seed,
+            "keep_alive": str(keep_alive) + "m",
+            "debug": True if debug == "enable" else False
+        }
+
         if debug == "enable":
             print(f"""[Ollama Vision]
 request query params:
@@ -96,8 +103,10 @@ request query params:
 - model: {model}
 
 """)
+        
+    
 
-        response = client.generate(model=model, prompt=query, images=images_binary, keep_alive=str(keep_alive) + "m", format=format)
+        response = client.generate(model=model, prompt=query, images=images_binary, options=options)
 
         if debug == "enable":
             print("[Ollama Vision]\nResponse:\n")
