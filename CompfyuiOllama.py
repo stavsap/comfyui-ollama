@@ -98,6 +98,9 @@ request query params:
 - query: {query}
 - url: {url}
 - model: {model}
+- keep_alive: {keep_alive} minutes
+- options: {options}
+- format: {format}
 
 """)
         
