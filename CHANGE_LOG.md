@@ -1,3 +1,7 @@
+10-07-2025:
+
+Adding user seed to OllamaVision request.
+
 10-06-2025:
 
 Increased temperature limits in OptionsV2.
