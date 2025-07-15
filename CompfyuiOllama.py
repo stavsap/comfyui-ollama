@@ -32,6 +32,11 @@ async def get_models_endpoint(request):
         models = [model['name'] for model in models]
         return web.json_response(models)
 
+NUM_GPU_HELP = (
+    "Controls how many layers go to the GPU. -1 means as many as will fit on GPU, then "
+    "offload to CPU, reducing performance. 0 means all CPU. Positive values force GPU "
+    "usage, but may OOM if not enough free VRAM."
+)
 
 class OllamaVision:
     def __init__(self):
@@ -127,6 +132,7 @@ class OllamaGenerate:
                 "keep_alive": ("INT", {"default": 5, "min": -1, "max": 60, "step": 1}),
                 "format": (["text", "json", ''],),
                 "filter_thinking": ("BOOLEAN", {"default": True}),
+                "num_gpu": ("INT", {"default": -1, "min": -1, "max": 999, "step": 1, "tooltip": NUM_GPU_HELP}),
             },
         }
 
@@ -135,7 +141,7 @@ class OllamaGenerate:
     FUNCTION = "ollama_generate"
     CATEGORY = "Ollama"
 
-    def ollama_generate(self, prompt, debug, url, model, keep_alive, format, filter_thinking):
+    def ollama_generate(self, prompt, debug, url, model, keep_alive, format, filter_thinking, num_gpu):
 
         client = Client(host=url)
 
@@ -152,7 +158,10 @@ request query params:
 
             """)
 
-        response = client.generate(model=model, prompt=prompt, keep_alive=str(keep_alive) + "m", format=format)
+        options = None
+        if num_gpu != -1:
+            options = {"num_gpu": num_gpu}
+        response = client.generate(model=model, prompt=prompt, keep_alive=str(keep_alive) + "m", format=format, options=options)
 
         if debug == "enable":
             print("[Ollama Generate]\nResponse:\n")
@@ -203,6 +212,7 @@ class OllamaGenerateAdvance:
                 "keep_context": ("BOOLEAN", {"default": False}),
                 "format": (["text", "json", ''],),
                 "filter_thinking": ("BOOLEAN", {"default": True}),
+                "num_gpu": ("INT", {"default": -1, "min": -1, "max": 999, "step": 1, "tooltip": NUM_GPU_HELP}),
             }, "optional": {
                 "context": ("STRING", {"forceInput": True}),
             }
@@ -214,7 +224,7 @@ class OllamaGenerateAdvance:
     CATEGORY = "Ollama"
 
     def ollama_generate_advance(self, prompt, debug, url, model, system, seed, top_k, top_p, temperature, num_predict,
-                                tfs_z, keep_alive, keep_context, format, filter_thinking, context=None):
+                                tfs_z, keep_alive, keep_context, format, filter_thinking, num_gpu, context=None):
 
         client = Client(host=url)
 
@@ -224,6 +234,7 @@ class OllamaGenerateAdvance:
         # num_keep: int
         # seed: int
         # num_predict: int
+        # num_gpu: int
         # top_k: int
         # top_p: float
         # tfs_z: float
@@ -247,6 +258,8 @@ class OllamaGenerateAdvance:
             "num_predict": num_predict,
             "tfs_z": tfs_z,
         }
+        if num_gpu != -1:
+            options["num_gpu"] = num_gpu
 
         if context != None and isinstance(context, str):
             string_list = context.split(',')
@@ -387,6 +400,9 @@ class OllamaOptionsV2:
                 "enable_min_p": ("BOOLEAN", {"default": False}),
                 "min_p": ("FLOAT", {"default": 0.0, "min": 0, "max": 1, "step": 0.05}),
 
+                "enable_num_gpu": ("BOOLEAN", {"default": False}),
+                "num_gpu": ("INT", {"default": -1, "min": -1, "max": 999, "step": 1, "tooltip": NUM_GPU_HELP}),
+
                 "debug": ("BOOLEAN", {"default": False}), # this is for nodes code usage only, not ollama api.
             },
         }
@@ -484,7 +500,7 @@ class OllamaGenerateV2:
                     'enable_mirostat_tau', 'enable_mirostat_eta',
                     'enable_num_ctx', 'enable_repeat_last_n', 'enable_repeat_penalty',
                     'enable_temperature', 'enable_seed', 'enable_stop', 'enable_tfs_z', 'enable_num_predict',
-                    'enable_top_k', 'enable_top_p', 'enable_min_p']
+                    'enable_top_k', 'enable_top_p', 'enable_min_p', 'enable_num_gpu']
 
         for enabler in enablers:
             if options[enabler]:
