@@ -608,12 +608,12 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "OllamaVision": "Ollama Vision",
-    "OllamaGenerate": "Ollama Generate",
-    "OllamaGenerateAdvance": "Ollama Generate Advance",
-    "OllamaOptionsV2": "Ollama Options V2",
-    "OllamaConnectivityV2": "Ollama Connectivity V2",
-    "OllamaGenerateV2": "Ollama Generate V2",
-    "OllamaSaveContext": "Ollama Save Context",
-    "OllamaLoadContext": "Ollama Load Context",
+    "OllamaVision": "🦙 Ollama Vision",
+    "OllamaGenerate": "🦙 Ollama Generate",
+    "OllamaGenerateAdvance": "🦙 Ollama Generate Advance",
+    "OllamaOptionsV2": "🦙 Ollama Options V2",
+    "OllamaConnectivityV2": "🦙 Ollama Connectivity V2",
+    "OllamaGenerateV2": "🦙 Ollama Generate V2",
+    "OllamaSaveContext": "🦙 Ollama Save Context",
+    "OllamaLoadContext": "🦙 Ollama Load Context",
 }
