@@ -34,6 +34,7 @@ async def get_models_endpoint(request):
 
 
 class OllamaVision:
+    DEPRECATED = True
     def __init__(self):
         pass
 
@@ -116,6 +117,7 @@ request query params:
 
 
 class OllamaGenerate:
+    DEPRECATED = True
     def __init__(self):
         pass
 
@@ -177,6 +179,7 @@ request query params:
 # https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-completion
 
 class OllamaGenerateAdvance:
+    DEPRECATED = True
     saved_context = None
 
     def __init__(self):
@@ -608,12 +611,12 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "OllamaVision": "Ollama Vision",
-    "OllamaGenerate": "Ollama Generate",
-    "OllamaGenerateAdvance": "Ollama Generate Advance",
-    "OllamaOptionsV2": "Ollama Options V2",
-    "OllamaConnectivityV2": "Ollama Connectivity V2",
-    "OllamaGenerateV2": "Ollama Generate V2",
+    "OllamaVision": "Ollama Vision (deprecated)",
+    "OllamaGenerate": "Ollama Generate (deprecated)",
+    "OllamaGenerateAdvance": "Ollama Generate Advance (deprecated)",
+    "OllamaOptionsV2": "Ollama Options",
+    "OllamaConnectivityV2": "Ollama Connectivity",
+    "OllamaGenerateV2": "Ollama Generate",
     "OllamaSaveContext": "Ollama Save Context",
     "OllamaLoadContext": "Ollama Load Context",
 }
