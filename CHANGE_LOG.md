@@ -1,3 +1,7 @@
+Unreleased:
+
+- Deprecate V1 nodes, please replace them in your workflows
+
 10-07-2025:
 
 Adding user seed to OllamaVision request.
