@@ -1,9 +1,6 @@
 import random
 import re
-import json
-from typing import Optional
 
-from httpx import request
 from ollama import Client
 import numpy as np
 import base64
