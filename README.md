@@ -8,13 +8,18 @@ To use this properly, you would need a running Ollama server reachable from the 
 
 <a href="https://www.buymeacoffee.com/stavsapq" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="40" width="174"></a>
 
+![pic](.meta/basic-example.jpg)
+
 ## Installation
 
-Install ollama server on the desired host
+### 1. Install ollama server on the desired host
 
 <a href="https://ollama.com/" target="_blank">
   <img src="https://img.shields.io/badge/v0.5.7-green.svg?style=for-the-badge&labelColor=gray&label=Ollama&color=blue" alt=""/>
 </a>
+
+<details>
+<summary><b>Instructions</b></summary>
 
 <a href="https://ollama.com/download/Ollama-darwin.zip" target="_blank">Download for macOS</a>
 
@@ -40,11 +45,15 @@ NVIDIA GPU
 docker run -d -p 11434:11434 --gpus=all -v ollama:/root/.ollama --name ollama  ollama/ollama
 ```
 
-Use the [compfyui manager](https://github.com/ltdrdata/ComfyUI-Manager) "Custom Node Manager":
+</details>
 
-![pic](.meta/InstallViaManager.png)
+### 2. Install the custom nodes
 
-Search `ollama` and select the one by `stavsap`
+Use ComfyUI's built-in extension manager to install the nodes. Search for `comfyui-ollama` by `Stav Sapir`.
+
+**Or**
+
+If you prefer [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager), search for `ollama` and select the one by `stavsap`
 
 ![pic](.meta/manager-install.png)
 
@@ -55,10 +64,6 @@ Search `ollama` and select the one by `stavsap`
 3. Start/restart ComfyUI
 
 ## Nodes
-
-Release of additional V2 Nodes, for more modular and controllable chained flows.
-
-![pic](.meta/v2.png)
 
 ### OllamaGenerate
 
@@ -99,8 +104,6 @@ Old V1 nodes are still available, please replace them with the above ones. Here'
 
 ## Usage Example
 
-Consider the following workflow of vision an image, and perform additional text processing with desired LLM. In the OllamaGenerate node set the prompt as input.
-
-![pic](.meta/CombinedUsage1.png)
+Please see the `example_workflows` folder or use ComfyUI's template browser.
 
 The custom Text Nodes in the examples can be found here: https://github.com/pythongosssss/ComfyUI-Custom-Scripts
