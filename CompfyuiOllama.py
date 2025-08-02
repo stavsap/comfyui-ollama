@@ -203,7 +203,7 @@ class OllamaGenerateV2:
                     "multiline": True,
                     "default": "What is art?"
                 }),
-                "filter_thinking": ("BOOLEAN", {"default": True}),
+                "think": ("BOOLEAN", {"default": False}),
                 "keep_context": ("BOOLEAN", {"default": False}),
                 "format": (["text", "json"],),
 
@@ -217,8 +217,8 @@ class OllamaGenerateV2:
             }
         }
 
-    RETURN_TYPES = ("STRING", "OLLAMA_CONTEXT", "OLLAMA_META",)
-    RETURN_NAMES = ("result", "context", "meta",)
+    RETURN_TYPES = ("STRING", "STRING", "OLLAMA_CONTEXT", "OLLAMA_META",)
+    RETURN_NAMES = ("result", "thinking", "context", "meta",)
     FUNCTION = "ollama_generate_v2"
     CATEGORY = "Ollama"
 
@@ -243,7 +243,7 @@ class OllamaGenerateV2:
 
         return response
 
-    def ollama_generate_v2(self, system, prompt, filter_thinking, keep_context, format, context = None, options=None, connectivity=None, images=None, meta=None):
+    def ollama_generate_v2(self, system, prompt, think, keep_context, format, context = None, options=None, connectivity=None, images=None, meta=None):
 
         if connectivity is None and meta is None:
             raise Exception("Required input connectivity or meta.")
@@ -301,6 +301,7 @@ system: {system}
 prompt: {prompt}
 images: {0 if images_b64 is None else len(images_b64)}
 context: {context}
+think: {think}
 options: {request_options}
 keep alive: {request_keep_alive}
 format: {format}
@@ -313,6 +314,7 @@ format: {format}
             prompt=prompt,
             images=images_b64,
             context=context,
+            think=think,
             options=request_options,
             keep_alive= request_keep_alive,
             format=format,
@@ -324,15 +326,14 @@ format: {format}
             print("---------------------------------------------------------")
 
         ollama_response_text = response['response']
-        if filter_thinking:
-            ollama_response_text = re.sub(r"<(?:think|thinking)>.*?</(?:think|thinking)>\s*", "", ollama_response_text, flags=re.DOTALL | re.IGNORECASE).strip()
+        ollama_response_thinking = response['thinking'] if think else None
 
         if keep_context:
             self.saved_context = response["context"]
             if debug_print:
                 print("saving context to node memory.")
 
-        return ollama_response_text, response['context'], meta,
+        return ollama_response_text, ollama_response_thinking, response['context'], meta,
 
 
 NODE_CLASS_MAPPINGS = {
