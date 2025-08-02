@@ -12,6 +12,10 @@ app.registerExtension({
 
         const urlWidget = this.widgets.find((w) => w.name === "url");
         const modelWidget = this.widgets.find((w) => w.name === "model");
+        let refreshButtonWidget = {};
+        if (nodeData.name === "OllamaConnectivityV2") {
+          refreshButtonWidget = this.addWidget("button", "🔄 Reconnect");
+        }
 
         const fetchModels = async (url) => {
           const response = await fetch("/ollama/get_models", {
@@ -34,6 +38,7 @@ app.registerExtension({
         };
 
         const updateModels = async () => {
+          refreshButtonWidget.name = "⏳ Fetching...";
           const url = urlWidget.value;
 
           let models = [];
@@ -47,6 +52,8 @@ app.registerExtension({
               detail: "Make sure Ollama server is running",
               life: 5000,
             });
+            refreshButtonWidget.name = "🔄 Reconnect";
+            this.setDirtyCanvas(true);
             return;
           }
 
@@ -62,10 +69,13 @@ app.registerExtension({
             modelWidget.value = models[0]; // set first as default.
           }
 
+          refreshButtonWidget.name = "🔄 Reconnect";
+          this.setDirtyCanvas(true);
           console.debug("Updated modelWidget.value:", modelWidget.value);
         };
 
         urlWidget.callback = updateModels;
+        refreshButtonWidget.callback = updateModels;
 
         const dummy = async () => {
           // calling async method will update the widgets with actual value from the browser and not the default from Node definition.
