@@ -1,6 +1,10 @@
 Unreleased:
 
-- Deprecate V1 nodes, please replace them in your workflows
+- Added `think` option and separate `thinking` output on the Ollama Generate node. This replaces the previous `filter_thinking` workaround.
+- Added tooltips and node descriptions.
+- Added example workflows. See ComfyUI's template browser in the workflow menu.
+- Added a message that appears when the list of models fails to load. User can click the "Reconnect" button on the connectivity node to reload list.
+- Deprecate V1 nodes, please replace them in your workflows.
 
 10-07-2025:
 
