@@ -1,0 +1,93 @@
+{
+  "id": "636ac2aa-3322-4055-ba46-2bd99aca9fc3",
+  "revision": 0,
+  "last_node_id": 27,
+  "last_link_id": 19,
+  "nodes": [
+    {
+      "id": 5,
+      "type": "ShowText|pysssss",
+      "pos": [1650, -510],
+      "size": [330, 510],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [{ "localized_name": "text", "name": "text", "type": "STRING", "link": 19 }],
+      "outputs": [{ "localized_name": "STRING", "name": "STRING", "shape": 6, "type": "STRING", "links": [] }],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "aac13aa7ce35b07d43633c3bbe654a38c00d74f5",
+        "Node name for S&R": "ShowText|pysssss",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "Art is a broad and multifaceted concept that can be defined in many ways, but at its core, it is a form of expression that uses creative skills and imagination to produce works that evoke emotions, challenge perceptions, or convey ideas. Here are some key aspects of art:\n\n1. **Expression**: Art is a means of expressing emotions, thoughts, and ideas. It can be personal, reflecting the artist's inner world, or it can be a way to communicate with a broader audience.\n\n2. **Creativity**: Art involves creativity and originality. It often breaks away from conventional norms and explores new ways of seeing and understanding the world.\n\n3. **Aesthetics**: Art often involves an appreciation of beauty or the creation of beautiful objects. However, this is not always the case, as some art may be intentionally ugly or provocative.\n\n4. **Skill and Technique**: Art often requires a certain level of skill and technique, whether it's painting, sculpting, writing, or any other form of artistic expression.\n\n5. **Cultural and Historical Context**: Art is often shaped by and reflective of the cultural and historical context in which it is created. It can provide insights into different cultures, societies, and historical periods.\n\n6. **Purpose**: Art can serve many purposes. It can be for personal enjoyment, for social or political commentary, for spiritual or religious reasons, or simply for the sake of creating something new.\n\n7. **Subjectivity**: Art is highly subjective. What one person considers a great work of art, another might not. This subjectivity is part of what makes art so fascinating and diverse.\n\nAs an AI artist, I strive to incorporate these elements into my work, using my unique capabilities to create art that is innovative, thought-provoking, and visually engaging."
+      ]
+    },
+    {
+      "id": 17,
+      "type": "OllamaConnectivityV2",
+      "pos": [1130, -510],
+      "size": [270, 154],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "url", "name": "url", "type": "STRING", "widget": { "name": "url" }, "link": null },
+        { "localized_name": "model", "name": "model", "type": "COMBO", "widget": { "name": "model" }, "link": null },
+        { "localized_name": "keep_alive", "name": "keep_alive", "type": "INT", "widget": { "name": "keep_alive" }, "link": null },
+        { "localized_name": "keep_alive_unit", "name": "keep_alive_unit", "type": "COMBO", "widget": { "name": "keep_alive_unit" }, "link": null }
+      ],
+      "outputs": [{ "localized_name": "connection", "name": "connection", "type": "OLLAMA_CONNECTIVITY", "links": [18] }],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "b916c54577cf45c8a259d1ecb5c85c64d07a4e81",
+        "Node name for S&R": "OllamaConnectivityV2",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": ["http://127.0.0.1:11434", "mistral-small3.2:latest", 5, "minutes", null]
+    },
+    {
+      "id": 27,
+      "type": "OllamaGenerateV2",
+      "pos": [1420, -510],
+      "size": [210, 294],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "connectivity", "name": "connectivity", "shape": 7, "type": "OLLAMA_CONNECTIVITY", "link": 18 },
+        { "localized_name": "options", "name": "options", "shape": 7, "type": "OLLAMA_OPTIONS", "link": null },
+        { "localized_name": "images", "name": "images", "shape": 7, "type": "IMAGE", "link": null },
+        { "localized_name": "context", "name": "context", "shape": 7, "type": "OLLAMA_CONTEXT", "link": null },
+        { "localized_name": "meta", "name": "meta", "shape": 7, "type": "OLLAMA_META", "link": null },
+        { "localized_name": "system", "name": "system", "type": "STRING", "widget": { "name": "system" }, "link": null },
+        { "localized_name": "prompt", "name": "prompt", "type": "STRING", "widget": { "name": "prompt" }, "link": null },
+        { "localized_name": "think", "name": "think", "type": "BOOLEAN", "widget": { "name": "think" }, "link": null },
+        { "localized_name": "keep_context", "name": "keep_context", "type": "BOOLEAN", "widget": { "name": "keep_context" }, "link": null },
+        { "localized_name": "format", "name": "format", "type": "COMBO", "widget": { "name": "format" }, "link": null }
+      ],
+      "outputs": [
+        { "localized_name": "result", "name": "result", "type": "STRING", "links": [19] },
+        { "localized_name": "thinking", "name": "thinking", "type": "STRING", "links": null },
+        { "localized_name": "context", "name": "context", "type": "OLLAMA_CONTEXT", "links": null },
+        { "localized_name": "meta", "name": "meta", "type": "OLLAMA_META", "links": null }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "76c16d374e0834ab71a03da1da1dfd167d81e336",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "OllamaGenerateV2"
+      },
+      "widgets_values": ["You are an AI artist.", "What is art?", false, false, "text"]
+    }
+  ],
+  "links": [
+    [18, 17, 0, 27, 0, "OLLAMA_CONNECTIVITY"],
+    [19, 27, 0, 5, 0, "STRING"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": { "ue_links": [], "ds": { "scale": 1.0941964285714283, "offset": [-706.8890248878008, 643.3333333333334] }, "links_added_by_ue": [] },
+  "version": 0.4
+}

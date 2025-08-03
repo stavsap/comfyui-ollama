@@ -1,0 +1,129 @@
+{
+  "id": "d776ef32-68ed-4ea6-8200-de4a5b6a8a1f",
+  "revision": 0,
+  "last_node_id": 28,
+  "last_link_id": 22,
+  "nodes": [
+    {
+      "id": 17,
+      "type": "OllamaConnectivityV2",
+      "pos": [1130, -510],
+      "size": [270, 154],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "url", "name": "url", "type": "STRING", "widget": { "name": "url" }, "link": null },
+        { "localized_name": "model", "name": "model", "type": "COMBO", "widget": { "name": "model" }, "link": null },
+        { "localized_name": "keep_alive", "name": "keep_alive", "type": "INT", "widget": { "name": "keep_alive" }, "link": null },
+        { "localized_name": "keep_alive_unit", "name": "keep_alive_unit", "type": "COMBO", "widget": { "name": "keep_alive_unit" }, "link": null }
+      ],
+      "outputs": [{ "localized_name": "connection", "name": "connection", "type": "OLLAMA_CONNECTIVITY", "links": [18] }],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "b916c54577cf45c8a259d1ecb5c85c64d07a4e81",
+        "Node name for S&R": "OllamaConnectivityV2",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": ["http://127.0.0.1:11434", "mistral-small3.2:latest", 5, "minutes", null]
+    },
+    {
+      "id": 27,
+      "type": "OllamaGenerateV2",
+      "pos": [1420, -510],
+      "size": [210, 294],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "connectivity", "name": "connectivity", "shape": 7, "type": "OLLAMA_CONNECTIVITY", "link": 18 },
+        { "localized_name": "options", "name": "options", "shape": 7, "type": "OLLAMA_OPTIONS", "link": null },
+        { "localized_name": "images", "name": "images", "shape": 7, "type": "IMAGE", "link": null },
+        { "localized_name": "context", "name": "context", "shape": 7, "type": "OLLAMA_CONTEXT", "link": null },
+        { "localized_name": "meta", "name": "meta", "shape": 7, "type": "OLLAMA_META", "link": null },
+        { "localized_name": "system", "name": "system", "type": "STRING", "widget": { "name": "system" }, "link": null },
+        { "localized_name": "prompt", "name": "prompt", "type": "STRING", "widget": { "name": "prompt" }, "link": null },
+        { "localized_name": "think", "name": "think", "type": "BOOLEAN", "widget": { "name": "think" }, "link": null },
+        { "localized_name": "keep_context", "name": "keep_context", "type": "BOOLEAN", "widget": { "name": "keep_context" }, "link": null },
+        { "localized_name": "format", "name": "format", "type": "COMBO", "widget": { "name": "format" }, "link": null }
+      ],
+      "outputs": [
+        { "localized_name": "result", "name": "result", "type": "STRING", "links": [] },
+        { "localized_name": "thinking", "name": "thinking", "type": "STRING", "links": null },
+        { "localized_name": "context", "name": "context", "type": "OLLAMA_CONTEXT", "links": [20] },
+        { "localized_name": "meta", "name": "meta", "type": "OLLAMA_META", "links": [21] }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "76c16d374e0834ab71a03da1da1dfd167d81e336",
+        "Node name for S&R": "OllamaGenerateV2",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": ["You are an AI artist.", "What is art?", false, false, "text"]
+    },
+    {
+      "id": 28,
+      "type": "OllamaGenerateV2",
+      "pos": [1650, -510],
+      "size": [210, 294],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "connectivity", "name": "connectivity", "shape": 7, "type": "OLLAMA_CONNECTIVITY", "link": null },
+        { "localized_name": "options", "name": "options", "shape": 7, "type": "OLLAMA_OPTIONS", "link": null },
+        { "localized_name": "images", "name": "images", "shape": 7, "type": "IMAGE", "link": null },
+        { "localized_name": "context", "name": "context", "shape": 7, "type": "OLLAMA_CONTEXT", "link": 20 },
+        { "localized_name": "meta", "name": "meta", "shape": 7, "type": "OLLAMA_META", "link": 21 },
+        { "localized_name": "system", "name": "system", "type": "STRING", "widget": { "name": "system" }, "link": null },
+        { "localized_name": "prompt", "name": "prompt", "type": "STRING", "widget": { "name": "prompt" }, "link": null },
+        { "localized_name": "think", "name": "think", "type": "BOOLEAN", "widget": { "name": "think" }, "link": null },
+        { "localized_name": "keep_context", "name": "keep_context", "type": "BOOLEAN", "widget": { "name": "keep_context" }, "link": null },
+        { "localized_name": "format", "name": "format", "type": "COMBO", "widget": { "name": "format" }, "link": null }
+      ],
+      "outputs": [
+        { "localized_name": "result", "name": "result", "type": "STRING", "links": [22] },
+        { "localized_name": "thinking", "name": "thinking", "type": "STRING", "links": null },
+        { "localized_name": "context", "name": "context", "type": "OLLAMA_CONTEXT", "links": null },
+        { "localized_name": "meta", "name": "meta", "type": "OLLAMA_META", "links": null }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "76c16d374e0834ab71a03da1da1dfd167d81e336",
+        "widget_ue_connectable": {},
+        "Node name for S&R": "OllamaGenerateV2"
+      },
+      "widgets_values": ["You are an AI artist.", "Can you summarize this in one sentence?", false, false, "text"]
+    },
+    {
+      "id": 5,
+      "type": "ShowText|pysssss",
+      "pos": [1880, -510],
+      "size": [210, 290],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [{ "localized_name": "text", "name": "text", "type": "STRING", "link": 22 }],
+      "outputs": [{ "localized_name": "STRING", "name": "STRING", "shape": 6, "type": "STRING", "links": [] }],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "aac13aa7ce35b07d43633c3bbe654a38c00d74f5",
+        "Node name for S&R": "ShowText|pysssss",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "Art is a creative expression of emotions, ideas, and aesthetics, shaped by skill, culture, and context, that evokes emotions and challenges perceptions."
+      ]
+    }
+  ],
+  "links": [
+    [18, 17, 0, 27, 0, "OLLAMA_CONNECTIVITY"],
+    [20, 27, 2, 28, 3, "OLLAMA_CONTEXT"],
+    [21, 27, 3, 28, 4, "OLLAMA_META"],
+    [22, 28, 0, 5, 0, "STRING"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": { "ue_links": [], "ds": { "scale": 1.0941964285714283, "offset": [-846.8890248878008, 643.3333333333334] }, "links_added_by_ue": [] },
+  "version": 0.4
+}
