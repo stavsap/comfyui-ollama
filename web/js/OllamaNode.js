@@ -2,6 +2,13 @@ import { app } from "/scripts/app.js";
 
 app.registerExtension({
   name: "Comfy.OllamaNode",
+  aboutPageBadges: [
+    {
+      label: "ComfyUI-Ollama",
+      url: "https://github.com/stavsap/comfyui-ollama",
+      icon: "pi pi-github",
+    },
+  ],
   async beforeRegisterNodeDef(nodeType, nodeData, app) {
     if (["OllamaGenerate", "OllamaGenerateAdvance", "OllamaVision", "OllamaConnectivityV2"].includes(nodeData.name)) {
       const originalNodeCreated = nodeType.prototype.onNodeCreated;
