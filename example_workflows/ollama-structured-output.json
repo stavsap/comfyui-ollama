@@ -1,0 +1,226 @@
+{
+  "id": "7732b8e2-9aac-43b5-bb39-701e87a9f45b",
+  "revision": 0,
+  "last_node_id": 56,
+  "last_link_id": 58,
+  "nodes": [
+    {
+      "id": 17,
+      "type": "OllamaConnectivityV2",
+      "pos": [1400, -470],
+      "size": [270, 154],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "url", "name": "url", "type": "STRING", "widget": { "name": "url" }, "link": null },
+        { "localized_name": "model", "name": "model", "type": "COMBO", "widget": { "name": "model" }, "link": null },
+        { "localized_name": "keep_alive", "name": "keep_alive", "type": "INT", "widget": { "name": "keep_alive" }, "link": null },
+        { "localized_name": "keep_alive_unit", "name": "keep_alive_unit", "type": "COMBO", "widget": { "name": "keep_alive_unit" }, "link": null }
+      ],
+      "outputs": [{ "localized_name": "connection", "name": "connection", "type": "OLLAMA_CONNECTIVITY", "links": [18] }],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "b916c54577cf45c8a259d1ecb5c85c64d07a4e81",
+        "Node name for S&R": "OllamaConnectivityV2",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": ["http://127.0.0.1:11434", "mistral-small3.2:latest", 0, "minutes", null]
+    },
+    {
+      "id": 5,
+      "type": "ShowText|pysssss",
+      "pos": [1920, -280],
+      "size": [370, 290],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [{ "localized_name": "text", "name": "text", "type": "STRING", "link": 24 }],
+      "outputs": [{ "localized_name": "STRING", "name": "STRING", "shape": 6, "type": "STRING", "links": [] }],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "aac13aa7ce35b07d43633c3bbe654a38c00d74f5",
+        "Node name for S&R": "ShowText|pysssss",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": ["{\n  \"dog\": 1\n}"]
+    },
+    {
+      "id": 50,
+      "type": "Text Input Switch",
+      "pos": [2140, -490],
+      "size": [145.72714233398438, 66],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "text_a", "name": "text_a", "type": "STRING", "link": 55 },
+        { "localized_name": "text_b", "name": "text_b", "type": "STRING", "link": 56 },
+        { "localized_name": "boolean", "name": "boolean", "type": "BOOLEAN", "link": 54 }
+      ],
+      "outputs": [{ "localized_name": "STRING", "name": "STRING", "type": "STRING", "links": [53] }],
+      "properties": {
+        "cnr_id": "pr-was-node-suite-comfyui-47064894",
+        "ver": "ea935d1044ae5a26efa54ebeb18fe9020af49a45",
+        "Node name for S&R": "Text Input Switch",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 53,
+      "type": "PrimitiveString",
+      "pos": [2140, -530],
+      "size": [270, 58],
+      "flags": { "collapsed": true },
+      "order": 1,
+      "mode": 0,
+      "inputs": [{ "localized_name": "value", "name": "value", "type": "STRING", "widget": { "name": "value" }, "link": null }],
+      "outputs": [{ "localized_name": "STRING", "name": "STRING", "type": "STRING", "links": [56] }],
+      "properties": { "cnr_id": "comfy-core", "ver": "0.3.48", "Node name for S&R": "PrimitiveString", "widget_ue_connectable": {} },
+      "widgets_values": ["No cats here"]
+    },
+    {
+      "id": 52,
+      "type": "PrimitiveString",
+      "pos": [2140, -570],
+      "size": [270, 58],
+      "flags": { "collapsed": true },
+      "order": 2,
+      "mode": 0,
+      "inputs": [{ "localized_name": "value", "name": "value", "type": "STRING", "widget": { "name": "value" }, "link": null }],
+      "outputs": [{ "localized_name": "STRING", "name": "STRING", "type": "STRING", "links": [55] }],
+      "properties": { "cnr_id": "comfy-core", "ver": "0.3.48", "Node name for S&R": "PrimitiveString", "widget_ue_connectable": {} },
+      "widgets_values": ["Found a cat!"]
+    },
+    {
+      "id": 45,
+      "type": "StringContains",
+      "pos": [1920, -490],
+      "size": [210, 166],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "string", "name": "string", "type": "STRING", "widget": { "name": "string" }, "link": 48 },
+        { "localized_name": "substring", "name": "substring", "type": "STRING", "widget": { "name": "substring" }, "link": null },
+        { "localized_name": "case_sensitive", "name": "case_sensitive", "type": "BOOLEAN", "widget": { "name": "case_sensitive" }, "link": null }
+      ],
+      "outputs": [{ "localized_name": "contains", "name": "contains", "type": "BOOLEAN", "links": [54] }],
+      "properties": { "cnr_id": "comfy-core", "ver": "0.3.48", "Node name for S&R": "StringContains", "widget_ue_connectable": {} },
+      "widgets_values": ["", "\"cat\"", false]
+    },
+    {
+      "id": 27,
+      "type": "OllamaGenerateV2",
+      "pos": [1690, -470],
+      "size": [210, 490],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "connectivity", "name": "connectivity", "shape": 7, "type": "OLLAMA_CONNECTIVITY", "link": 18 },
+        { "localized_name": "options", "name": "options", "shape": 7, "type": "OLLAMA_OPTIONS", "link": null },
+        { "localized_name": "images", "name": "images", "shape": 7, "type": "IMAGE", "link": 58 },
+        { "localized_name": "context", "name": "context", "shape": 7, "type": "OLLAMA_CONTEXT", "link": null },
+        { "localized_name": "meta", "name": "meta", "shape": 7, "type": "OLLAMA_META", "link": null },
+        { "localized_name": "system", "name": "system", "type": "STRING", "widget": { "name": "system" }, "link": null },
+        { "localized_name": "prompt", "name": "prompt", "type": "STRING", "widget": { "name": "prompt" }, "link": null },
+        { "localized_name": "think", "name": "think", "type": "BOOLEAN", "widget": { "name": "think" }, "link": null },
+        { "localized_name": "keep_context", "name": "keep_context", "type": "BOOLEAN", "widget": { "name": "keep_context" }, "link": null },
+        { "localized_name": "format", "name": "format", "type": "COMBO", "widget": { "name": "format" }, "link": null }
+      ],
+      "outputs": [
+        { "localized_name": "result", "name": "result", "type": "STRING", "links": [24, 48] },
+        { "localized_name": "thinking", "name": "thinking", "type": "STRING", "links": null },
+        { "localized_name": "context", "name": "context", "type": "OLLAMA_CONTEXT", "links": [] },
+        { "localized_name": "meta", "name": "meta", "type": "OLLAMA_META", "links": [] }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "76c16d374e0834ab71a03da1da1dfd167d81e336",
+        "Node name for S&R": "OllamaGenerateV2",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "Reply in JSON format, containing a dictionary of objects and their counts found in the image. The user prompt defines the category of objects to look for.\nFor example, if the user prompts \"animals\" then the reply should be something like { \"cat\": 2, \"dog\": 1 }",
+        "animals",
+        false,
+        false,
+        "json"
+      ]
+    },
+    {
+      "id": 54,
+      "type": "Note",
+      "pos": [1540, -660],
+      "size": [250, 130],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": { "widget_ue_connectable": {} },
+      "widgets_values": [
+        "Demonstration of the structured output feature (format: json).\nIn this particular example ollama takes an image and outputs the identified animals and their counts. Then the pipeline processes the json to tell the user whether there are cats in the output."
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 56,
+      "type": "LoadImage",
+      "pos": [1400, -280],
+      "size": [274.080078125, 314],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "image", "name": "image", "type": "COMBO", "widget": { "name": "image" }, "link": null },
+        { "localized_name": "choose file to upload", "name": "upload", "type": "IMAGEUPLOAD", "widget": { "name": "upload" }, "link": null }
+      ],
+      "outputs": [
+        { "localized_name": "IMAGE", "name": "IMAGE", "type": "IMAGE", "links": [58] },
+        { "localized_name": "MASK", "name": "MASK", "type": "MASK", "links": null }
+      ],
+      "properties": { "cnr_id": "comfy-core", "ver": "0.3.48", "Node name for S&R": "LoadImage", "widget_ue_connectable": {} },
+      "widgets_values": ["vili_240706.jpg", "image"],
+      "color": "#233",
+      "bgcolor": "#355"
+    },
+    {
+      "id": 51,
+      "type": "ShowText|pysssss",
+      "pos": [2320, -490],
+      "size": [140, 76],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [{ "localized_name": "text", "name": "text", "type": "STRING", "link": 53 }],
+      "outputs": [{ "localized_name": "STRING", "name": "STRING", "shape": 6, "type": "STRING", "links": null }],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "aac13aa7ce35b07d43633c3bbe654a38c00d74f5",
+        "Node name for S&R": "ShowText|pysssss",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": ["No cats here"],
+      "color": "#233",
+      "bgcolor": "#355"
+    }
+  ],
+  "links": [
+    [18, 17, 0, 27, 0, "OLLAMA_CONNECTIVITY"],
+    [24, 27, 0, 5, 0, "STRING"],
+    [48, 27, 0, 45, 0, "STRING"],
+    [53, 50, 0, 51, 0, "STRING"],
+    [54, 45, 0, 50, 2, "BOOLEAN"],
+    [55, 52, 0, 50, 0, "STRING"],
+    [56, 53, 0, 50, 1, "STRING"],
+    [58, 56, 0, 27, 2, "IMAGE"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": { "ue_links": [], "ds": { "scale": 1.0671736763826691, "offset": [-1039.4280284470228, 687.3754916659057] }, "links_added_by_ue": [] },
+  "version": 0.4
+}

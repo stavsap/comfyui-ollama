@@ -1,0 +1,113 @@
+{
+  "id": "161f7b18-499d-4fc2-b342-b45790e65c01",
+  "revision": 0,
+  "last_node_id": 26,
+  "last_link_id": 17,
+  "nodes": [
+    {
+      "id": 5,
+      "type": "ShowText|pysssss",
+      "pos": [1650, -510],
+      "size": [330, 510],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [{ "localized_name": "text", "name": "text", "type": "STRING", "link": 4 }],
+      "outputs": [{ "localized_name": "STRING", "name": "STRING", "shape": 6, "type": "STRING", "links": [] }],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "aac13aa7ce35b07d43633c3bbe654a38c00d74f5",
+        "Node name for S&R": "ShowText|pysssss",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "The image depicts a scenic view of a cityscape along a river. Here are the detailed elements visible in the image:\n\n1. **River and Boats**: The foreground features a wide river with several large boats, likely river cruise ships, docked along the shore. These boats are multi-decked and appear to be designed for tours or leisure cruises.\n\n2. **Bridge**: A prominent bridge spans the river. This bridge has a modern design with white supports and cables, suggesting it might be a suspension bridge. It connects the two sides of the river, facilitating transportation and possibly pedestrian traffic.\n\n3. **Cityscape**: On the right side of the image, there is a densely built urban area with a mix of architectural styles. The buildings range from historic structures with ornate facades to more modern constructions. The historic buildings have distinctive features such as domed roofs, spires, and intricate detailing, indicating a rich architectural heritage.\n\n4. **Background**: The background shows a range of hills or mountains under a clear blue sky, adding a natural element to the urban setting.\n\n5. **People and Activity**: Along the riverbank, there are people visible, suggesting that this area is a popular spot for visitors. The presence of tourists on the boats and along the shore indicates that this might be a well-known tourist destination.\n\nOverall, the image captures a vibrant and picturesque scene combining natural beauty with urban charm."
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [1130, -320],
+      "size": [270, 326],
+      "flags": { "collapsed": false },
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "image", "name": "image", "type": "COMBO", "widget": { "name": "image" }, "link": null },
+        { "localized_name": "choose file to upload", "name": "upload", "type": "IMAGEUPLOAD", "widget": { "name": "upload" }, "link": null }
+      ],
+      "outputs": [
+        { "localized_name": "IMAGE", "name": "IMAGE", "type": "IMAGE", "links": [2] },
+        { "localized_name": "MASK", "name": "MASK", "type": "MASK", "links": null }
+      ],
+      "properties": { "cnr_id": "comfy-core", "ver": "0.3.45", "Node name for S&R": "LoadImage", "widget_ue_connectable": {} },
+      "widgets_values": ["pasted/image (85).png", "image"]
+    },
+    {
+      "id": 17,
+      "type": "OllamaConnectivityV2",
+      "pos": [1130, -510],
+      "size": [270, 154],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "url", "name": "url", "type": "STRING", "widget": { "name": "url" }, "link": null },
+        { "localized_name": "model", "name": "model", "type": "COMBO", "widget": { "name": "model" }, "link": null },
+        { "localized_name": "keep_alive", "name": "keep_alive", "type": "INT", "widget": { "name": "keep_alive" }, "link": null },
+        { "localized_name": "keep_alive_unit", "name": "keep_alive_unit", "type": "COMBO", "widget": { "name": "keep_alive_unit" }, "link": null }
+      ],
+      "outputs": [{ "localized_name": "connection", "name": "connection", "type": "OLLAMA_CONNECTIVITY", "links": [10] }],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "b916c54577cf45c8a259d1ecb5c85c64d07a4e81",
+        "Node name for S&R": "OllamaConnectivityV2",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": ["http://127.0.0.1:11434", "mistral-small3.2:latest", 5, "minutes", null]
+    },
+    {
+      "id": 1,
+      "type": "OllamaGenerateV2",
+      "pos": [1420, -510],
+      "size": [210, 510],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        { "localized_name": "connectivity", "name": "connectivity", "shape": 7, "type": "OLLAMA_CONNECTIVITY", "link": 10 },
+        { "localized_name": "options", "name": "options", "shape": 7, "type": "OLLAMA_OPTIONS", "link": null },
+        { "localized_name": "images", "name": "images", "shape": 7, "type": "IMAGE", "link": 2 },
+        { "localized_name": "context", "name": "context", "shape": 7, "type": "OLLAMA_CONTEXT", "link": null },
+        { "localized_name": "meta", "name": "meta", "shape": 7, "type": "OLLAMA_META", "link": null },
+        { "localized_name": "system", "name": "system", "type": "STRING", "widget": { "name": "system" }, "link": null },
+        { "localized_name": "prompt", "name": "prompt", "type": "STRING", "widget": { "name": "prompt" }, "link": null },
+        { "localized_name": "think", "name": "think", "type": "BOOLEAN", "widget": { "name": "think" }, "link": null },
+        { "localized_name": "keep_context", "name": "keep_context", "type": "BOOLEAN", "widget": { "name": "keep_context" }, "link": null },
+        { "localized_name": "format", "name": "format", "type": "COMBO", "widget": { "name": "format" }, "link": null }
+      ],
+      "outputs": [
+        { "localized_name": "result", "name": "result", "type": "STRING", "links": [4] },
+        { "localized_name": "thinking", "name": "thinking", "type": "STRING", "links": [] },
+        { "localized_name": "context", "name": "context", "type": "OLLAMA_CONTEXT", "links": [] },
+        { "localized_name": "meta", "name": "meta", "type": "OLLAMA_META", "links": null }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "1f5b5bf54551bc9f0b1a4d2915ad496f6dfd8c36",
+        "Node name for S&R": "OllamaGenerateV2",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": ["", "Describe the image in detail.", false, false, "text"]
+    }
+  ],
+  "links": [
+    [2, 3, 0, 1, 2, "IMAGE"],
+    [4, 1, 0, 5, 0, "STRING"],
+    [10, 17, 0, 1, 0, "OLLAMA_CONNECTIVITY"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": { "ue_links": [], "ds": { "scale": 1.3730138888888928, "offset": [-959.7915462231246, 565.1478295330589] }, "links_added_by_ue": [] },
+  "version": 0.4
+}
