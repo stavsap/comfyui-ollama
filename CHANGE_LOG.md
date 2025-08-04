@@ -1,4 +1,4 @@
-Unreleased:
+04-08-2025:
 
 - Added `think` option and separate `thinking` output on the Ollama Generate node. This replaces the previous `filter_thinking` workaround.
 - Added tooltips and node descriptions.
