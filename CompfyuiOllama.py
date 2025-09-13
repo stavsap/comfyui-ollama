@@ -289,6 +289,11 @@ class OllamaGenerateV2:
         if keep_context and context is None:
             context = self.saved_context
 
+        # if the keep context toggle was disabled and context has been kept in the node's memory, clear it
+        if not keep_context and self.saved_context is not None:
+            self.saved_context = None
+            context = None
+
         keep_alive_unit =  'm' if meta['connectivity']['keep_alive_unit'] == "minutes" else 'h'
         request_keep_alive = str(meta['connectivity']['keep_alive']) + keep_alive_unit
 
