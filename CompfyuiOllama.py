@@ -24,10 +24,10 @@ async def get_models_endpoint(request):
 
     try:
         models = [model['model'] for model in models]
-        return web.json_response(models)
+        return web.json_response(sorted(models))  # avoid shuffling the answers in the dropdown and thus triggering unwanted re-runs
     except Exception as e:
         models = [model['name'] for model in models]
-        return web.json_response(models)
+        return web.json_response(sorted(models))
 
 class OllamaSaveContext:
     def __init__(self):
@@ -66,7 +66,7 @@ class OllamaLoadContext:
     @classmethod
     def INPUT_TYPES(s):
         input_dir = os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "saved_context"
-        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f)) and f != ".keep"]
+        files = sorted([f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f)) and f != ".keep"])  # added sorted() for predictability
         return {"required":
                     {"context_file": (files, {})},
                 }
@@ -90,7 +90,7 @@ class OllamaOptionsV2:
 
     @classmethod
     def INPUT_TYPES(s):
-        seed = random.randint(1, 2 ** 31)
+        #seed = random.randint(1, 2 ** 31)  # externally the seed is already modified by ComfyUI depending on "Control after generate" parameter 
         return {
             "required": {
                 "enable_mirostat": ("BOOLEAN", {"default": False}),
@@ -113,9 +113,6 @@ class OllamaOptionsV2:
 
                 "enable_temperature": ("BOOLEAN", {"default": False}),
                 "temperature": ("FLOAT", {"default": 0.8, "min": -10, "max": 10, "step": 0.05, "tooltip": "Increasing the temperature will make the model answer more creatively."}),
-
-                "enable_seed": ("BOOLEAN", {"default": False}),
-                "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1, "tooltip": "Sets the random number seed to use for generation. Setting this to a specific number will make the model generate the same text for the same prompt."}),
 
                 "enable_stop": ("BOOLEAN", {"default": False}),
                 "stop": ("STRING", {"default": "", "multiline": False, "tooltip": "When this pattern is encountered the LLM will stop generating text and return."}),
@@ -211,6 +208,7 @@ class OllamaGenerateV2:
                 "think": ("BOOLEAN", {"default": False, "tooltip": "If enabled, the model will do a thinking process before answering. This can result in more accurate results. The thinking is then available as a separate output for debugging or understanding how the model arrived at its answer. Some models don't support this feature and the generation will fail."}),
                 "keep_context": ("BOOLEAN", {"default": False, "tooltip": "If enabled, the model will keep the context of the conversation and use it for the next generation. This is useful for multi-turn conversations or tasks that require context."}),
                 "format": (["text", "json"], {"tooltip": "Output format of the response. 'text' will return a plain text response, while 'json' will return a structured response in JSON format. This is useful when the model is part of a larger pipeline and you need additional processing on the response. In this case I recommend showing the model example outputs in the system prompt. Some models are not trained to perform well in structured output."}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 2 ** 31, "step": 1, "tooltip": "Sets the random number seed to use for generation. Setting this to a specific number will make the model generate the same text for the same prompt."}),
 
             },
             "optional": {
@@ -221,6 +219,16 @@ class OllamaGenerateV2:
                 "meta": ("OLLAMA_META", {"forceInput": False, "tooltip": "Use this input to chain multiple 'Ollama Generate' nodes. In this case the connectivity and options inputs are passed along."},),
             }
         }
+    
+    @classmethod
+    def IS_CHANGED(s, keep_context, **kwargs):
+        # ComfyUI calls this method to determine if it should re-run the node.
+        if keep_context:
+            # When in context holding mode we want to always re run
+            # this makes sense since the context shall vary every time
+            return float("NaN")  # NaN trick: it's never equal to itself :)
+        # Otherwise revert to default behavior (execution.py checks all inputs for changes)
+        return None  
 
     RETURN_TYPES = ("STRING", "STRING", "OLLAMA_CONTEXT", "OLLAMA_META",)
     RETURN_NAMES = ("result", "thinking", "context", "meta",)
@@ -237,7 +245,7 @@ class OllamaGenerateV2:
         enablers = ['enable_mirostat', 'enable_mirostat_eta',
                     'enable_mirostat_tau', 'enable_mirostat_eta',
                     'enable_num_ctx', 'enable_repeat_last_n', 'enable_repeat_penalty',
-                    'enable_temperature', 'enable_seed', 'enable_stop', 'enable_tfs_z', 'enable_num_predict',
+                    'enable_temperature', 'enable_stop', 'enable_tfs_z', 'enable_num_predict',
                     'enable_top_k', 'enable_top_p', 'enable_min_p']
 
         for enabler in enablers:
@@ -249,7 +257,7 @@ class OllamaGenerateV2:
 
         return response
 
-    def ollama_generate_v2(self, system, prompt, think, keep_context, format, context = None, options=None, connectivity=None, images=None, meta=None):
+    def ollama_generate_v2(self, system, prompt, think, keep_context, format, seed, context = None, options=None, connectivity=None, images=None, meta=None):
 
         if connectivity is None and meta is None:
             raise Exception("Required input connectivity or meta.")
@@ -280,6 +288,11 @@ class OllamaGenerateV2:
 
         if keep_context and context is None:
             context = self.saved_context
+
+        # if the keep context toggle was disabled and context has been kept in the node's memory, clear it
+        if not keep_context and self.saved_context is not None:
+            self.saved_context = None
+            context = None
 
         keep_alive_unit =  'm' if meta['connectivity']['keep_alive_unit'] == "minutes" else 'h'
         request_keep_alive = str(meta['connectivity']['keep_alive']) + keep_alive_unit
