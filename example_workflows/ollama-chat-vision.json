@@ -1,0 +1,252 @@
+{
+  "id": "161f7b18-499d-4fc2-b342-b45790e65c01",
+  "revision": 0,
+  "last_node_id": 29,
+  "last_link_id": 20,
+  "nodes": [
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [
+        1130,
+        -320
+      ],
+      "size": [
+        270,
+        326
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            19
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45",
+        "Node name for S&R": "LoadImage",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "img-1(1).jpg",
+        "image"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "ShowText|pysssss",
+      "pos": [
+        1690,
+        -510
+      ],
+      "size": [
+        330,
+        510
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 20
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "shape": 6,
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "aac13aa7ce35b07d43633c3bbe654a38c00d74f5",
+        "Node name for S&R": "ShowText|pysssss",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "vulgaire public. Résultat pas\nun centime. Heureusement que\nmon oncle a eu l'esprit de\nmourir et que son tout petit\nhéritage va me permettre de"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "OllamaConnectivityV2",
+      "pos": [
+        1130,
+        -510
+      ],
+      "size": [
+        270,
+        154
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "connection",
+          "type": "OLLAMA_CONNECTIVITY",
+          "links": [
+            18
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "b916c54577cf45c8a259d1ecb5c85c64d07a4e81",
+        "Node name for S&R": "OllamaConnectivityV2",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "http://127.0.0.1:11434",
+        "qwen3-vl:235b-cloud",
+        5,
+        "minutes",
+        null
+      ]
+    },
+    {
+      "id": 27,
+      "type": "OllamaChat",
+      "pos": [
+        1440,
+        -510
+      ],
+      "size": [
+        210,
+        294
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "connectivity",
+          "shape": 7,
+          "type": "OLLAMA_CONNECTIVITY",
+          "link": 18
+        },
+        {
+          "name": "options",
+          "shape": 7,
+          "type": "OLLAMA_OPTIONS",
+          "link": null
+        },
+        {
+          "name": "images",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 19
+        },
+        {
+          "name": "meta",
+          "shape": 7,
+          "type": "OLLAMA_META",
+          "link": null
+        },
+        {
+          "name": "history",
+          "shape": 7,
+          "type": "OLLAMA_HISTORY",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "result",
+          "type": "STRING",
+          "links": [
+            20
+          ]
+        },
+        {
+          "name": "thinking",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "meta",
+          "type": "OLLAMA_META",
+          "links": null
+        },
+        {
+          "name": "history",
+          "type": "OLLAMA_HISTORY",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "2.0.7",
+        "Node name for S&R": "OllamaChat"
+      },
+      "widgets_values": [
+        "You are an OCR specialist.",
+        "Extract text from the image",
+        false,
+        "text",
+        false
+      ]
+    }
+  ],
+  "links": [
+    [
+      18,
+      17,
+      0,
+      27,
+      0,
+      "OLLAMA_CONNECTIVITY"
+    ],
+    [
+      19,
+      3,
+      0,
+      27,
+      2,
+      "IMAGE"
+    ],
+    [
+      20,
+      27,
+      0,
+      5,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.937786960514236,
+      "offset": [
+        -827.2139116659525,
+        591.911739820036
+      ]
+    },
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "groupNodes": {},
+    "frontendVersion": "1.27.5"
+  },
+  "version": 0.4
+}
