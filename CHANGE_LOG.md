@@ -1,3 +1,9 @@
+23-10-2025:
+
+- Fixed Ollama cloud model support with new OllamaChat node
+- Cloud models authenticate via SSH keys (no API key required)
+- Uses `ollama.chat()` method for cloud compatibility
+
 04-08-2025:
 
 - Added `think` option and separate `thinking` output on the Ollama Generate node. This replaces the previous `filter_thinking` workaround.

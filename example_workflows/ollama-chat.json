@@ -1,0 +1,202 @@
+{
+  "id": "161f7b18-499d-4fc2-b342-b45790e65c01",
+  "revision": 0,
+  "last_node_id": 29,
+  "last_link_id": 20,
+  "nodes": [
+    {
+      "id": 5,
+      "type": "ShowText|pysssss",
+      "pos": [
+        1690,
+        -510
+      ],
+      "size": [
+        330,
+        510
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 20
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "shape": 6,
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "aac13aa7ce35b07d43633c3bbe654a38c00d74f5",
+        "Node name for S&R": "ShowText|pysssss",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "### “What Is Art?” – A Rough Guide\n\n| **Aspect** | **What It Means** | **Why It Matters** |\n|------------|-------------------|-------------------|\n| **Definition** | Art is *intentionally created or transformed sensory experiences*—visual, auditory, performative, textual, or otherwise—that communicate ideas, emotions, or concepts. | It gives us a way to *see, hear, or feel* the world that goes beyond the purely functional or practical. |\n| **Historical Layers** | *Pre‑historical cave paintings → medieval illuminated manuscripts → Renaissance oil paintings → modern/digital installations.* | Each era reshapes the tools and purposes of art, reflecting changing cultures, technologies, and worldviews. |\n| **Philosophical Questions** | 1. *Is art only about representation?*  <br>2. *Can an artwork be “good” if no one cares?*  <br>3. *Does art need a creator, or can algorithms make it?* | These debates drive art theory—e.g., aestheticism, formalism, institutional theory, post‑structuralism. |\n| **Functional Views** | • **Expression / Communication** – conveying feelings or ideas.  <br>• **Aesthetic Pleasure** – providing beauty or surprise.  <br>• **Social & Political Critique** – challenging power structures. | Understanding purpose explains why art is embedded in rituals, protest, identity formation, and education. |\n| **Modern & Contemporary Nuances** | • **Conceptual Art** – the idea *above* the object.  <br>• **Interactive/Participatory Art** – audiences become co‑creators.  <br>• **Digital/Algorithmic Art** – computer code becomes canvas. | These shift the boundary between *artist* and *audience* and question what *creation* really means. |\n| **Cultural Specificity** | Different societies stress different modes: some prioritize oral storytelling, others visual icons, yet others sonic traditions. | Art acts as a repository of cultural memory; understanding this helps avoid cultural appropriation. |\n| **Everyday Art** | Not all art is in museums or galleries. Street murals, fashion design, culinary presentation, even the layout of a well‑crafted website can be artworks. | Recognizes that art permeates daily life—its accessibility and relevance depend on context. |\n| **Evaluating Art** | *Subjective* (personal taste) and *objective* (technical skill, innovation, cultural impact). | A balanced critique must honor both the creator’s intent and the audience’s reception. |\n\n---\n\n#### Quick Takeaway\n- **At its core, art is a form of deliberate, sensory communication.**  \n- **It evolves with culture, technology, and philosophy.**  \n- **Its value lies as much in *how* we *experience* it as in *what* it *shows*.**  \n\nIf you’d like to dive deeper into any of these facets—say, the role of AI in art, the history of feminist art movements, or how art theory evolved in the 20th century—just let me know!"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "OllamaConnectivityV2",
+      "pos": [
+        1130,
+        -510
+      ],
+      "size": [
+        270,
+        154
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "connection",
+          "type": "OLLAMA_CONNECTIVITY",
+          "links": [
+            18
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "b916c54577cf45c8a259d1ecb5c85c64d07a4e81",
+        "Node name for S&R": "OllamaConnectivityV2",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "http://127.0.0.1:11434",
+        "gpt-oss:20b-cloud",
+        5,
+        "minutes",
+        null
+      ]
+    },
+    {
+      "id": 27,
+      "type": "OllamaChat",
+      "pos": [
+        1440,
+        -510
+      ],
+      "size": [
+        210,
+        294
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "connectivity",
+          "shape": 7,
+          "type": "OLLAMA_CONNECTIVITY",
+          "link": 18
+        },
+        {
+          "name": "options",
+          "shape": 7,
+          "type": "OLLAMA_OPTIONS",
+          "link": null
+        },
+        {
+          "name": "images",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "meta",
+          "shape": 7,
+          "type": "OLLAMA_META",
+          "link": null
+        },
+        {
+          "name": "history",
+          "shape": 7,
+          "type": "OLLAMA_HISTORY",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "result",
+          "type": "STRING",
+          "links": [
+            20
+          ]
+        },
+        {
+          "name": "thinking",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "meta",
+          "type": "OLLAMA_META",
+          "links": null
+        },
+        {
+          "name": "history",
+          "type": "OLLAMA_HISTORY",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-ollama",
+        "ver": "2.0.7",
+        "Node name for S&R": "OllamaChat"
+      },
+      "widgets_values": [
+        "You are an AI artist.",
+        "What is AI Art?",
+        false,
+        "text",
+        false
+      ]
+    }
+  ],
+  "links": [
+    [
+      18,
+      17,
+      0,
+      27,
+      0,
+      "OLLAMA_CONNECTIVITY"
+    ],
+    [
+      20,
+      27,
+      0,
+      5,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.937786960514236,
+      "offset": [
+        -815.2708225489463,
+        672.1005085444565
+      ]
+    },
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "groupNodes": {},
+    "frontendVersion": "1.27.5"
+  },
+  "version": 0.4
+}

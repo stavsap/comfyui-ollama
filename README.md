@@ -63,6 +63,26 @@ If you prefer [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager), se
 2. `pip install -r requirements.txt`
 3. Start/restart ComfyUI
 
+### Configuration (Ollama Key)
+
+If you are using **Ollama Cloud templates** that require authentication, you must provide your Ollama public key.
+
+You can do this automatically with the CLI:
+```shell
+ollama signin
+```
+
+Or by manually adding your public key at [ollama.com/settings/key](https://ollama.com/settings/keys).
+
+Your public key is located at:
+| OS | Path to id_ed25519.pub |
+|----|-----------------------|
+| macOS | ~/.ollama/id_ed25519.pub |
+| Linux | /usr/share/ollama/.ollama/id_ed25519.pub |
+| Windows | C:\Users\<username>\.ollama\id_ed25519.pub |
+
+See Ollama's [FAQ](https://docs.ollama.com/faq#where-can-i-find-my-ollama-public-key%3F) for more details.
+
 ## Nodes
 
 ### OllamaGenerate
@@ -73,16 +93,42 @@ Ability to save context locally in the node `enable/disable`
 
 Inputs:
 
-- **OllamaConnectivity** (optional)
-- **OllamaOptions** (optional)
-- **images** (optional)
-- **context** (optional), a context from other OllamaConnectivity
-- **meta** (optional), passing metadata of the OllamaConnectivity and OllamaOptions from other OllamaGenerate node.
+-   **OllamaConnectivity** (optional)
+-   **OllamaOptions** (optional)
+-   **images** (optional)
+-   **context** (optional), a context from other OllamaConnectivity
+-   **meta** (optional), passing metadata of the OllamaConnectivity and OllamaOptions from other OllamaGenerate node.
 
 **Notes:**
 
-- For this node to be operational, **OllamaConnectivity** or **meta** must be inputted!.
-- If **images** are inputted and a chain of **meta** usage is made, all the **images** need to be passed as well to the next **OllamaConnectivity** nodes.
+-   For this node to be operational, **OllamaConnectivity** or **meta** must be inputted!.
+-   If **images** are inputted and a chain of **meta** usage is made, all the **images** need to be passed as well to the next **OllamaConnectivity** nodes.
+
+## OllamaChat
+
+A node for **conversational interaction** using the dedicated Ollama chat endpoint (`ollama.chat`). It manages the full conversation history natively and allows for chained sequences of chat nodes.
+
+-   **Functionality:** Unlike `OllamaGenerate`, this node is designed specifically for multi-turn conversations and cloud models with your Ollama public key (see the Configuration section).
+-   **Key Features:**
+    -   Conversation history is handled natively within the node instance.
+    -   Dedicated history outputs for **chaining multiple chat nodes**.
+    -   Option to **reset** the current conversation history on demand.
+
+Inputs:
+
+-   **OllamaConnectivity** (optional)
+-   **OllamaOptions** (optional)
+-   **images** (optional)
+-   **meta** (optional), passing metadata of the OllamaConnectivity and
+    OllamaOptions from other OllamaChat node.
+-   **history** (optional), passing history ID from other OllamaChat node.
+
+Outputs:
+
+-   **result**: The generated text
+-   **thinking**: The thinking text
+-   **meta**: The metadata to pass to the next OllamaChat node
+-   **history**: The history ID to pass to the next OllamaChat node
 
 ### OllamaConnectivity
 
