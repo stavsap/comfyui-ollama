@@ -20,8 +20,10 @@ app.registerExtension({
         const urlWidget = this.widgets.find((w) => w.name === "url");
         const modelWidget = this.widgets.find((w) => w.name === "model");
         let refreshButtonWidget = {};
+        let clearMemoryButtonWidget = {};
         if (nodeData.name === "OllamaConnectivityV2") {
           refreshButtonWidget = this.addWidget("button", "🔄 Reconnect");
+          clearMemoryButtonWidget = this.addWidget("button", "🗑️ Clear memory");
         }
 
         const fetchModels = async (url) => {
@@ -81,8 +83,43 @@ app.registerExtension({
           console.debug("Updated modelWidget.value:", modelWidget.value);
         };
 
+        const clearMemory = async () => {
+          clearMemoryButtonWidget.name = "⏳ Clearing...";
+          const url = urlWidget.value;
+          const model = modelWidget.value;
+          const response = await fetch("/ollama/clear_memory", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              url,
+              model,
+            }),
+          });
+          if (response.ok) {
+            console.debug("Memory cleared");
+            app.extensionManager.toast.add({
+              severity: "success",
+              summary: "Ollama memory cleared",
+              detail: "Memory cleared successfully",
+              life: 5000,
+            });
+          } else {
+            console.error("Error clearing memory:", response);
+            app.extensionManager.toast.add({
+              severity: "error",
+              summary: "Ollama memory clear error",
+              detail: response.error,
+              life: 5000,
+            });
+          }
+          clearMemoryButtonWidget.name = "🗑️ Clear memory";
+        };
+
         urlWidget.callback = updateModels;
         refreshButtonWidget.callback = updateModels;
+        clearMemoryButtonWidget.callback = clearMemory
 
         const dummy = async () => {
           // calling async method will update the widgets with actual value from the browser and not the default from Node definition.

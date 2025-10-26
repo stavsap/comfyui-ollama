@@ -75,6 +75,24 @@ async def get_models_endpoint(request):
         models = [model['name'] for model in models]
         return web.json_response(models)
 
+@PromptServer.instance.routes.post("/ollama/clear_memory")
+async def clear_memory_endpoint(request):
+    data = await request.json()
+
+    url = data.get("url")
+    model = data.get("model")
+    client = Client(host=url)
+
+    print('--- clear memory')
+    print(f"Clearing memory for model: {model}")
+
+    try:
+        client.generate(model=model, keep_alive=0)
+        return web.json_response({"success": True})
+    except Exception as e:
+        return web.json_response({"success": False, "error": str(e)})
+
+
 class OllamaSaveContext:
     def __init__(self):
         self._base_dir = os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "saved_context"
@@ -415,12 +433,13 @@ class OllamaChat:
                     },
                 ),
                 "think": (
-                    "BOOLEAN",
+                    ["off", "on", "low", "medium", "high"], 
                     {
-                        "default": False,
-                        "tooltip": "If enabled, the model will do a thinking process before answering. This can result in more accurate results. The thinking is then available as a separate output for debugging or understanding how the model arrived at its answer. Some models don't support this feature and the generation will fail.",
-                    },
-                ),
+                        "default": "off",
+                        "tooltip": "Boolean mode: off/on.\nLevel mode (gpt-oss): low/medium/high"
+                    }
+                )
+                ,
                 "format": (
                     ["text", "json"],
                     {
@@ -495,7 +514,7 @@ class OllamaChat:
         self,
         system: str,
         prompt: str,
-        think: bool,
+        think: Literal["off", "on", "low", "medium", "high"],
         unique_id: str,
         format: str,
         options: dict[str, Any] | None = None,
@@ -543,7 +562,7 @@ class OllamaChat:
         )
         request_keep_alive = str(meta["connectivity"]["keep_alive"]) + keep_alive_unit
 
-        # 4. use the shared helper instead of self.get_request_options
+        # use the shared helper instead of self.get_request_options
         request_options = _filter_enabled_options(options)
 
         images_b64: list[str] | None = None
@@ -557,6 +576,18 @@ class OllamaChat:
                 img_bytes = base64.b64encode(buffered.getvalue()).decode("utf-8")
                 images_b64.append(img_bytes)
 
+        # thinking: off => False, on => True or ["low", "medium", "high"] for gpt-oss models
+        thinking: bool | Literal["low", "medium", "high"] | None = None
+        if think == "off":
+            thinking = False
+        elif think == "on":
+            thinking = True
+        elif think in ["low", "medium", "high"]:
+            if model.startswith("gpt-oss"):
+                thinking = think
+            else:
+                thinking = True
+
         if debug_print:
             print(
                 f"""
@@ -567,7 +598,7 @@ model: {model}
 system: {system}
 prompt: {prompt}
 images: {0 if images_b64 is None else len(images_b64)}
-think: {think}
+think: {thinking}
 options: {request_options}
 keep alive: {request_keep_alive}
 format: {format}
@@ -631,6 +662,7 @@ format: {format}
             options=request_options,
             keep_alive=request_keep_alive,
             format=ollama_format,
+            think=thinking,
         )
 
         if debug_print:
