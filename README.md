@@ -113,6 +113,9 @@ A node for **conversational interaction** using the dedicated Ollama chat endpoi
     -   Conversation history is handled natively within the node instance.
     -   Dedicated history outputs for **chaining multiple chat nodes**.
     -   Option to **reset** the current conversation history on demand.
+    -   **Thinking Mode:** Supports both boolean (on/off) and granular levels (low/medium/high) for compatible models
+        -   Boolean mode works with all models that support it (off by default for models that don't support it)
+        -   Level mode (low/medium/high) is available for gpt-oss models
 
 Inputs:
 
@@ -133,6 +136,13 @@ Outputs:
 ### OllamaConnectivity
 
 A node responsible only fot the connectivity to the ollama server
+
+Features:
+-   Set Ollama URL
+-   Set Ollama Model
+-   **Reconnect**: Reconnect to the Ollama server and update models list
+-   **Clear memory**: Clear GPU memory used by loaded LLMs
+*This is particularly helpful when working with large models or running multiple inference workflows.*
 
 ### OllamaOptions
 
