@@ -2,3 +2,4 @@ venv
 .idea
 saved_context
 __pycache__
+.vscode
