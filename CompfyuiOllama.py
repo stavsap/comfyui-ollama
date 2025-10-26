@@ -1,3 +1,5 @@
+from __future__ import annotations
+import copy
 import random
 import re
 
@@ -11,7 +13,51 @@ from pprint import pprint
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 import os
+from typing import TYPE_CHECKING, Any, Literal
+from dataclasses import dataclass, field
+from pydantic.json_schema import JsonSchemaValue
 
+# For type checking only. Torch is not installed at runtime
+if TYPE_CHECKING:
+    import torch
+
+
+@dataclass
+class ChatSession:
+    messages: list[dict] = field(default_factory=list)
+    model: str = ""
+
+
+# Dictionary global per session_id
+CHAT_SESSIONS: dict[str, ChatSession] = {}
+
+# Function to filter enabled options
+def _filter_enabled_options(options: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Return only the ollama options whose 'enable_*' flag is True."""
+    if not options:
+        return None
+    enablers = [
+        "enable_mirostat",
+        "enable_mirostat_eta",
+        "enable_mirostat_tau",
+        "enable_num_ctx",
+        "enable_repeat_last_n",
+        "enable_repeat_penalty",
+        "enable_temperature",
+        "enable_seed",
+        "enable_stop",
+        "enable_tfs_z",
+        "enable_num_predict",
+        "enable_top_k",
+        "enable_top_p",
+        "enable_min_p",
+    ]
+    out: dict[str, Any] = {}
+    for enabler in enablers:
+        if options.get(enabler, False):
+            key = enabler.replace("enable_", "")
+            out[key] = options[key]
+    return out or None
 
 @PromptServer.instance.routes.post("/ollama/get_models")
 async def get_models_endpoint(request):
@@ -342,12 +388,282 @@ format: {format}
         return ollama_response_text, ollama_response_thinking, response['context'], meta,
 
 
+class OllamaChat:
+    """
+    Text generation with Ollama Chat.
+    Returns: (result: str, thinking: str|None, meta: dict, history: str)
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "system": (
+                    "STRING",
+                    {
+                        "multiline": True,
+                        "default": "You are an AI artist.",
+                        "tooltip": "System prompt - use this to set the role and general behavior of the model.",
+                    },
+                ),
+                "prompt": (
+                    "STRING",
+                    {
+                        "multiline": True,
+                        "default": "What is art?",
+                        "tooltip": "User prompt - a question or task you want the model to answer or perform. For vision tasks, you can refer to the input image as 'this image', 'photo' etc. like 'Describe this image in detail'",
+                    },
+                ),
+                "think": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": "If enabled, the model will do a thinking process before answering. This can result in more accurate results. The thinking is then available as a separate output for debugging or understanding how the model arrived at its answer. Some models don't support this feature and the generation will fail.",
+                    },
+                ),
+                "format": (
+                    ["text", "json"],
+                    {
+                        "tooltip": "Output format of the response. 'text' will return a plain text response, while 'json' will return a structured response in JSON format. This is useful when the model is part of a larger pipeline and you need additional processing on the response. In this case I recommend showing the model example outputs in the system prompt. Some models are not trained to perform well in structured output."
+                    },
+                ),
+            },
+            "optional": {
+                "connectivity": (
+                    "OLLAMA_CONNECTIVITY",
+                    {
+                        "forceInput": False,
+                        "tooltip": "Set an ollama provider for the generation. If this input is empty, the 'meta' input must be set.",
+                    },
+                ),
+                "options": (
+                    "OLLAMA_OPTIONS",
+                    {
+                        "forceInput": False,
+                        "tooltip": "Connect an Ollama Options node for advanced inference configuration.",
+                    },
+                ),
+                "images": (
+                    "IMAGE",
+                    {
+                        "forceInput": False,
+                        "tooltip": "Provide an image or a batch of images for vision tasks. Make sure that the selected model supports vision, otherwise it may hallucinate the response.",
+                    },
+                ),
+                "meta": (
+                    "OLLAMA_META",
+                    {
+                        "forceInput": False,
+                        "tooltip": "Use this input to chain multiple 'Ollama Generate' nodes. In this case the connectivity and options inputs are passed along.",
+                    },
+                ),
+                "history": (
+                    "OLLAMA_HISTORY",
+                    {
+                        "forceInput": False,
+                        "tooltip": "Optionally set an existing model history, useful for multi-turn conversations, follow-up questions.",
+                    },
+                ),
+                "reset_session": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": "Clear the conversation history. WARNING: If using shared history, this will affect all nodes using the same history ID.",
+                    },
+                ),
+            },
+            "hidden": {"unique_id": "UNIQUE_ID"},
+        }
+
+    RETURN_TYPES = (
+        "STRING",
+        "STRING",
+        "OLLAMA_META",
+        "OLLAMA_HISTORY",
+    )
+    RETURN_NAMES = (
+        "result",
+        "thinking",
+        "meta",
+        "history",
+    )
+    FUNCTION = "ollama_chat"
+    CATEGORY = "Ollama"
+    DESCRIPTION = "Text generation with Ollama Chat. Supports vision tasks, multi-turn conversations, and advanced inference options. Connect an Ollama Connectivity node to set the server URL and model."
+
+    def ollama_chat(
+        self,
+        system: str,
+        prompt: str,
+        think: bool,
+        unique_id: str,
+        format: str,
+        options: dict[str, Any] | None = None,
+        connectivity: dict[str, Any] | None = None,
+        images: list[torch.Tensor] | None = None,
+        meta: dict[str, Any] | None = None,
+        history: str | None = None,
+        reset_session: bool = False,
+    ) -> tuple[str | None, str | None, dict[str, Any], str | None]:
+
+        if meta is None:
+            if connectivity is None:
+                raise ValueError("Either 'connectivity' or 'meta' must be provided.")
+            meta = {}
+
+        # Update with provided values (override)
+        if connectivity is not None:
+            meta["connectivity"] = connectivity
+        if options is not None:
+            meta["options"] = options
+        else:
+            meta["options"] = None
+
+        # Final validation
+        if "connectivity" not in meta or meta["connectivity"] is None:
+            raise ValueError("'connectivity' must be present in meta.")
+
+        url = meta["connectivity"]["url"]
+        model = meta["connectivity"]["model"]
+        client = Client(host=url)
+
+        debug_print = (
+            True if meta["options"] is not None and meta["options"]["debug"] else False
+        )
+
+        ollama_format: Literal["", "json"] | JsonSchemaValue | None = None
+
+        if format == "json":
+            ollama_format = "json"
+        elif format == "text":
+            ollama_format = ""
+
+        keep_alive_unit = (
+            "m" if meta["connectivity"]["keep_alive_unit"] == "minutes" else "h"
+        )
+        request_keep_alive = str(meta["connectivity"]["keep_alive"]) + keep_alive_unit
+
+        # 4. use the shared helper instead of self.get_request_options
+        request_options = _filter_enabled_options(options)
+
+        images_b64: list[str] | None = None
+        if images is not None:
+            images_b64 = []
+            for batch_number, image in enumerate(images):
+                i = 255.0 * image.cpu().numpy()
+                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+                buffered = BytesIO()
+                img.save(buffered, format="PNG")
+                img_bytes = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                images_b64.append(img_bytes)
+
+        if debug_print:
+            print(
+                f"""
+--- ollama chat request: 
+
+url: {url}
+model: {model}
+system: {system}
+prompt: {prompt}
+images: {0 if images_b64 is None else len(images_b64)}
+think: {think}
+options: {request_options}
+keep alive: {request_keep_alive}
+format: {format}
+---------------------------------------------------------
+"""
+            )
+
+        # Determinate which session to use
+        session_key = history if history is not None else unique_id
+
+        # If reset_session is True, reset the session
+        if reset_session:
+            CHAT_SESSIONS[session_key] = ChatSession()
+            if debug_print:
+                print(f"Session {session_key} has been reset")
+
+        # If the session doesn't exist, create it
+        if session_key not in CHAT_SESSIONS:
+            CHAT_SESSIONS[session_key] = ChatSession()
+
+        session = CHAT_SESSIONS[session_key]
+
+        # Update history for return
+        history = session_key
+
+        # If there is a system prompt, replace it or add it to the beginning
+        if system:
+            if session.messages and session.messages[0].get("role") == "system":
+                session.messages[0] = {"role": "system", "content": system}
+            else:
+                session.messages.insert(0, {"role": "system", "content": system})
+
+        # Construct the user message for history
+        user_message_for_history: dict[str, Any] = {
+            "role": "user",
+            "content": prompt,
+        }
+
+        # Add the user message to the history (without images)
+        session.messages.append(user_message_for_history)
+
+        if debug_print:
+            print("\n--- ollama chat session:")
+            for message in session.messages:
+                pprint(f"{message['role']}> {message['content'][:50]}...")
+                if "images" in message:
+                    for image in message["images"]:
+                        pprint(f"Image: {image[:50]}...")
+            print("---------------------------------------------------------")
+
+        # Construct the messages for the API call (with images)
+        messages_for_api = copy.deepcopy(session.messages)
+
+        # If there are images, modify the last user message for the API call
+        if images_b64 is not None:
+            messages_for_api[-1]["images"] = images_b64
+
+        response = client.chat(
+            model=model,
+            messages=messages_for_api,
+            options=request_options,
+            keep_alive=request_keep_alive,
+            format=ollama_format,
+        )
+
+        if debug_print:
+            print("\n--- ollama chat response:")
+            pprint(response)
+            print("---------------------------------------------------------")
+
+        ollama_response_text = response.message.content
+        ollama_response_thinking = response.message.thinking if think else None
+
+        # Add the assistant message to the history
+        session.messages.append(
+            {
+                "role": "assistant",
+                "content": ollama_response_text,
+            }
+        )
+
+        return (
+            ollama_response_text,
+            ollama_response_thinking,
+            meta,
+            history,
+        )
+
+
 NODE_CLASS_MAPPINGS = {
     "OllamaOptionsV2": OllamaOptionsV2,
     "OllamaConnectivityV2": OllamaConnectivityV2,
     "OllamaGenerateV2": OllamaGenerateV2,
     "OllamaSaveContext": OllamaSaveContext,
     "OllamaLoadContext": OllamaLoadContext,
+    "OllamaChat": OllamaChat,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -356,4 +672,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OllamaGenerateV2": "Ollama Generate",
     "OllamaSaveContext": "Ollama Save Context",
     "OllamaLoadContext": "Ollama Load Context",
+    "OllamaChat": "Ollama Chat",
 }
