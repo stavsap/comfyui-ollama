@@ -2,6 +2,7 @@ from __future__ import annotations
 import copy
 import random
 import re
+import time
 
 from ollama import Client
 import numpy as np
@@ -257,6 +258,10 @@ class OllamaGenerateV2:
                 "think": ("BOOLEAN", {"default": False, "tooltip": "If enabled, the model will do a thinking process before answering. This can result in more accurate results. The thinking is then available as a separate output for debugging or understanding how the model arrived at its answer. Some models don't support this feature and the generation will fail."}),
                 "keep_context": ("BOOLEAN", {"default": False, "tooltip": "If enabled, the model will keep the context of the conversation and use it for the next generation. This is useful for multi-turn conversations or tasks that require context."}),
                 "format": (["text", "json"], {"tooltip": "Output format of the response. 'text' will return a plain text response, while 'json' will return a structured response in JSON format. This is useful when the model is part of a larger pipeline and you need additional processing on the response. In this case I recommend showing the model example outputs in the system prompt. Some models are not trained to perform well in structured output."}),
+                "disable_cache": ("BOOLEAN", {
+                    "default": False, 
+                    "tooltip": "If enabled, the node will always re-execute on each workflow run, even if inputs haven't changed. This ensures you get fresh LLM outputs each time. Disabled by default for backward compatibility (allows ComfyUI caching)."
+                }),
 
             },
             "optional": {
@@ -273,6 +278,18 @@ class OllamaGenerateV2:
     FUNCTION = "ollama_generate_v2"
     CATEGORY = "Ollama"
     DESCRIPTION = "Text generation with Ollama. Supports vision tasks, multi-turn conversations, and advanced inference options. Connect an Ollama Connectivity node to set the server URL and model."
+
+    @classmethod
+    def IS_CHANGED(cls, disable_cache=False, **kwargs):
+        """
+        Force re-execution on every workflow run if disable_cache is True.
+        Since AI models can produce different outputs for the same input,
+        we return a new timestamp to prevent ComfyUI from caching/skipping this node.
+        """
+        if disable_cache:
+            return time.time()
+        # Return None to allow caching when toggle is off (backward compatible)
+        return None
 
     def get_request_options(self, options):
         response = None
@@ -295,7 +312,7 @@ class OllamaGenerateV2:
 
         return response
 
-    def ollama_generate_v2(self, system, prompt, think, keep_context, format, context = None, options=None, connectivity=None, images=None, meta=None):
+    def ollama_generate_v2(self, system, prompt, think, keep_context, format, disable_cache=False, context = None, options=None, connectivity=None, images=None, meta=None):
 
         if connectivity is None and meta is None:
             raise Exception("Required input connectivity or meta.")
