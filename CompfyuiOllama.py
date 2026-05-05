@@ -69,10 +69,10 @@ async def get_models_endpoint(request):
     models = client.list().get('models', [])
 
     try:
-        models = [model['model'] for model in models]
+        models = sorted([model['model'] for model in models])
         return web.json_response(models)
     except Exception as e:
-        models = [model['name'] for model in models]
+        models = sorted([model['name'] for model in models])
         return web.json_response(models)
 
 class OllamaSaveContext:
