@@ -1,9 +1,9 @@
 import { app } from "/scripts/app.js";
 
 app.registerExtension({
-    name: "Comfy.OllamaNode",
+  name: "Comfy.OllamaNode",
   async beforeRegisterNodeDef(nodeType, nodeData, app) {
-    if (["OllamaGenerate", "OllamaGenerateAdvance", "OllamaVision", "OllamaConnectivityV2"].includes(nodeData.name) ) {
+    if (["OllamaGenerate", "OllamaGenerateAdvance", "OllamaVision", "OllamaConnectivityV2"].includes(nodeData.name)) {
       const originalNodeCreated = nodeType.prototype.onNodeCreated;
       nodeType.prototype.onNodeCreated = async function () {
         if (originalNodeCreated) {
@@ -41,9 +41,9 @@ app.registerExtension({
 
         const updateModels = async () => {
           const url = urlWidget.value;
-          const prevValue = modelWidget.value
-          modelWidget.value = ''
-          modelWidget.options.values = []
+          const prevValue = modelWidget.value;
+          modelWidget.value = "";
+          modelWidget.options.values = [];
 
           const models = await fetchModels(url);
 
@@ -64,7 +64,7 @@ app.registerExtension({
 
         const dummy = async () => {
           // calling async method will update the widgets with actual value from the browser and not the default from Node definition.
-        }
+        };
 
         // Initial update
         await dummy(); // this will cause the widgets to obtain the actual value from web page.
