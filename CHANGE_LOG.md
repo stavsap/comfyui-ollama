@@ -1,3 +1,28 @@
+12-10-2026:
+
+Reliability and speed fixes for current Ollama (tested with Ollama 0.40.3 and ComfyUI 0.39.2).
+
+- Ollama Chat now sends the `think` setting. Many current models think by default, so before this the node always ran a full reasoning pass even with `think` off, which made it much slower.
+- Ollama Chat is now stateless by default: each run starts a new conversation. Turn on the new `remember_history` input to keep the conversation across runs. Before this, every run added to the history until ComfyUI restarted, so each run got slower. The `history` output now carries the conversation itself, so chained Chat nodes keep working.
+- Responses are streamed. The text appears on the node while it's generated, and ComfyUI's cancel button now stops the generation in Ollama.
+- Progress on the node: while waiting, it says whether Ollama is connecting, loading the model or reading the prompt, with the seconds elapsed. While generating, it shows the phase (thinking or writing the answer), the token count and the elapsed time.
+- Each run logs a timing summary to the console: model load time, prompt reading, tokens generated, speed, and how many tokens went to thinking.
+- Requests time out instead of hanging forever. A wrong URL fails within about 10 seconds, and a request fails if Ollama sends nothing for `request_timeout` seconds (new input on Ollama Options, default 300, 0 = no limit).
+- Loading the model list no longer freezes the ComfyUI interface when the Ollama URL is wrong or slow, and errors are shown in the notification.
+- The model list is sorted alphabetically.
+- New `think_level` input (auto/low/medium/high) on Ollama Generate and Ollama Chat, for models with thinking levels such as gpt-oss.
+- If a model writes its reasoning inside `<think>` tags that Ollama doesn't recognize (usually a custom import), Ollama Generate and Ollama Chat move it from `result` to `thinking`.
+- New `seed` input on Ollama Generate and Ollama Chat, with ComfyUI's usual control after generate. `fixed` (the default) reuses the previous result while nothing changes; `randomize` gives a fresh answer on every run. The seed on Ollama Options is deprecated; if it's enabled, it still overrides the node's seed.
+- Ollama Options: `stop` works again. It was sent as plain text, which current Ollama rejects, so every request failed when it was enabled.
+- Ollama Options: `mirostat`, `mirostat_eta`, `mirostat_tau` and `tfs_z` are no longer supported by Ollama. They're kept so older workflows load, but they're no longer sent, and a warning is logged if they're enabled.
+- Ollama Options: new `num_gpu`, `presence_penalty` and `frequency_penalty` settings. `num_predict` and `repeat_last_n` accept larger values, and `num_ctx` starts at 8192 when enabled.
+- Ollama Options: the deprecated seed now defaults to `fixed`. When it was `randomize`, every connected node re-ran on every queue.
+- New "Unload models" button on Ollama Connectivity frees the VRAM Ollama is using, so ComfyUI can use it.
+- Fixed options being ignored on chained nodes connected through `meta`.
+- Fixed the KeyError 'context' crash in Ollama Generate.
+- Requires `ollama>=0.6.2` (the python client), and the unused `dotenv` requirement is removed. If an older version is installed, the nodes say so and show the command to update it.
+- Node titles now start with 🦙.
+
 23-10-2025:
 
 - Fixed Ollama cloud model support with new OllamaChat node

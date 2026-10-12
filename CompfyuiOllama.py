@@ -1,20 +1,26 @@
 from __future__ import annotations
 import copy
+import logging
 import random
 import re
+import sys
+import threading
+import time
+from importlib.metadata import PackageNotFoundError, version as package_version
 
-from ollama import Client
+import httpx
+from ollama import AsyncClient, Client
 import numpy as np
 import base64
 from io import BytesIO
+import comfy.model_management
 from server import PromptServer
 from aiohttp import web
 from pprint import pprint
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 import os
-from typing import TYPE_CHECKING, Any, Literal
-from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal
 from pydantic.json_schema import JsonSchemaValue
 
 # For type checking only. Torch is not installed at runtime
@@ -22,14 +28,49 @@ if TYPE_CHECKING:
     import torch
 
 
-@dataclass
-class ChatSession:
-    messages: list[dict] = field(default_factory=list)
-    model: str = ""
+# Seconds Ollama may stay silent (model load, prompt processing, between tokens) before a request fails.
+DEFAULT_REQUEST_TIMEOUT = 300
+# Seconds to wait for a TCP connection, so a wrong URL fails fast.
+CONNECT_TIMEOUT = 10
+
+THINK_LEVELS = ["auto", "low", "medium", "high"]
+
+# Seed widget for Generate and Chat. Defaults to 'fixed', so an unchanged node reuses its result as before.
+SEED_INPUT = ("INT", {
+    "default": 0, "min": 0, "max": 2 ** 31, "control_after_generate": "fixed",
+    "tooltip": "Random seed for the answer. The same seed and inputs usually give the same answer, and ComfyUI reuses "
+               "the previous result. Set the control below to 'randomize' to get a fresh answer on every run.",
+})
+
+# Chat messages remembered per node (unique_id) when 'remember_history' is enabled
+CHAT_SESSIONS: dict[str, list[dict]] = {}
+
+MIN_OLLAMA_VERSION = "0.6.2"
 
 
-# Dictionary global per session_id
-CHAT_SESSIONS: dict[str, ChatSession] = {}
+def _ollama_version_problem() -> str | None:
+    """Explain how to update the 'ollama' Python package if it's older than these nodes need, else None."""
+    try:
+        installed = package_version("ollama")
+    except PackageNotFoundError:
+        return None
+    if tuple(int(n) for n in re.findall(r"\d+", installed)[:3]) >= tuple(int(n) for n in MIN_OLLAMA_VERSION.split(".")):
+        return None
+    return (
+        f"comfyui-ollama needs version {MIN_OLLAMA_VERSION} or newer of the 'ollama' Python package "
+        f"(the library ComfyUI uses to talk to Ollama, not the Ollama app), but this ComfyUI has {installed}. "
+        f"To update it, run this command and then restart ComfyUI:\n"
+        f'"{sys.executable}" -m pip install -U "ollama>={MIN_OLLAMA_VERSION},<1"'
+    )
+
+
+# Checked once at startup, then shown in the console, the model list notification and node errors.
+OLLAMA_VERSION_PROBLEM = _ollama_version_problem()
+if OLLAMA_VERSION_PROBLEM:
+    logging.warning(OLLAMA_VERSION_PROBLEM)
+
+# Options Ollama no longer supports. Their widgets stay so saved workflows still load, but they aren't sent.
+REMOVED_OPTIONS = ["mirostat", "mirostat_eta", "mirostat_tau", "tfs_z"]
 
 # Function to filter enabled options
 def _filter_enabled_options(options: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -37,43 +78,286 @@ def _filter_enabled_options(options: dict[str, Any] | None) -> dict[str, Any] | 
     if not options:
         return None
     enablers = [
-        "enable_mirostat",
-        "enable_mirostat_eta",
-        "enable_mirostat_tau",
         "enable_num_ctx",
         "enable_repeat_last_n",
         "enable_repeat_penalty",
         "enable_temperature",
         "enable_seed",
         "enable_stop",
-        "enable_tfs_z",
         "enable_num_predict",
         "enable_top_k",
         "enable_top_p",
         "enable_min_p",
+        "enable_num_gpu",
+        "enable_presence_penalty",
+        "enable_frequency_penalty",
     ]
     out: dict[str, Any] = {}
     for enabler in enablers:
         if options.get(enabler, False):
             key = enabler.replace("enable_", "")
             out[key] = options[key]
+    # Ollama requires a list of stop sequences and rejects the whole request for a plain string.
+    if "stop" in out:
+        stop = out.pop("stop")
+        if stop:
+            out["stop"] = [stop]
     return out or None
+
+
+def _with_seed(request_options: dict[str, Any] | None, seed: int | None) -> dict[str, Any] | None:
+    """Add the node's seed. A seed enabled on the (older) Ollama Options node takes precedence."""
+    if seed is None:
+        return request_options
+    return {"seed": seed, **(request_options or {})}
+
+
+def _make_client(url: str, request_timeout: int | None) -> Client:
+    """Client that fails fast on a bad URL and gives up when Ollama is silent for request_timeout seconds (0/None = never)."""
+    return Client(host=url, timeout=httpx.Timeout(request_timeout or None, connect=CONNECT_TIMEOUT))
+
+
+def _request_timeout(options: dict[str, Any] | None) -> int:
+    if not options:
+        return DEFAULT_REQUEST_TIMEOUT
+    return options.get("request_timeout", DEFAULT_REQUEST_TIMEOUT)
+
+
+def _resolve_think(think: bool, think_level: str) -> bool | str:
+    """Map the think toggle and level to Ollama's 'think' value. Always explicit, since many models think by default."""
+    if not think:
+        return False
+    return True if think_level == "auto" else think_level
+
+
+def _images_to_b64(images: torch.Tensor | None) -> list[str] | None:
+    if images is None:
+        return None
+    images_b64 = []
+    for image in images:
+        i = 255.0 * image.cpu().numpy()
+        img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        images_b64.append(base64.b64encode(buffered.getvalue()).decode("utf-8"))
+    return images_b64
+
+
+_THINK_OPEN = re.compile(r"<(?:think|thinking)>", re.IGNORECASE)
+_THINK_CLOSE = re.compile(r"</(?:think|thinking)>", re.IGNORECASE)
+_THINK_BLOCK = re.compile(r"<(?:think|thinking)>(.*?)</(?:think|thinking)>\s*", re.DOTALL | re.IGNORECASE)
+
+
+def _split_inline_thinking(text: str) -> tuple[str, str]:
+    """
+    Fallback for models whose <think> tags Ollama doesn't recognize: move the reasoning out of the answer.
+    Returns (answer, reasoning found in it). Text without think tags is returned unchanged.
+    """
+    found = []
+    close, open_ = _THINK_CLOSE.search(text), _THINK_OPEN.search(text)
+    if close and (open_ is None or close.start() < open_.start()):
+        # The prompt template already opened <think>, so the output only has the closing tag.
+        found.append(text[:close.start()])
+        text = text[close.end():]
+
+    def take(match):
+        found.append(match.group(1))
+        return ""
+
+    text = _THINK_BLOCK.sub(take, text)
+    open_ = _THINK_OPEN.search(text)
+    if open_:
+        # Cut off mid-thought, e.g. by num_predict: the rest is all reasoning.
+        found.append(text[open_.end():])
+        text = text[:open_.start()]
+
+    if not found:
+        return text, ""
+    return text.strip(), "\n".join(part.strip() for part in found if part.strip())
+
+
+class _NodeStatus:
+    """
+    Progress text on the node. Until the first token arrives it says what Ollama is doing (loading the model or
+    reading the prompt) and for how long, refreshed every second by a background thread. After that it shows the
+    phase, token count and elapsed time above the streaming text.
+    """
+
+    def __init__(self, node_id: str | None, url: str, model: str, image_count: int):
+        self._send = getattr(PromptServer.instance, "send_progress_text", None) if node_id is not None else None
+        self._node_id, self._url, self._model, self._image_count = node_id, url, model, image_count
+        self._started = time.monotonic()
+        self._shown_at = 0.0
+        self._streaming = threading.Event()
+        self._lock = threading.Lock()  # so the waiting thread never overwrites live text
+        if self._send:
+            threading.Thread(target=self._show_waiting, daemon=True).start()
+
+    def _elapsed(self) -> str:
+        return f"{time.monotonic() - self._started:.0f}s"
+
+    def _show_waiting(self):
+        cloud = self._model.endswith("cloud")
+        loaded = reachable = False
+        with Client(host=self._url, timeout=1) as client:
+            while True:
+                if not loaded and not cloud:
+                    # Ollama lists a model only once it has finished loading.
+                    try:
+                        loaded = any(m.model == self._model for m in client.ps().models)
+                        reachable = True
+                    except Exception:
+                        reachable = False
+                if cloud:
+                    doing = "Waiting for Ollama Cloud"
+                elif not reachable:
+                    doing = "Connecting to Ollama"
+                elif loaded:
+                    images = f" and {self._image_count} image{'s' if self._image_count > 1 else ''}" if self._image_count else ""
+                    doing = f"Reading prompt{images}"
+                else:
+                    doing = f"Loading {self._model}"
+                with self._lock:
+                    if self._streaming.is_set():
+                        return
+                    self._send(f"{doing}... {self._elapsed()}", self._node_id)
+                if self._streaming.wait(1.0):
+                    return
+
+    def stop_waiting(self):
+        with self._lock:
+            self._streaming.set()
+
+    def update(self, text: str, thinking: str, tokens: int):
+        """Live counters above the streaming text, at most four times a second."""
+        if not self._send:
+            return
+        if not self._streaming.is_set():
+            self.stop_waiting()
+        if time.monotonic() - self._shown_at < 0.25:
+            return
+        self._shown_at = time.monotonic()
+        answer, inline = _split_inline_thinking(text)
+        counters = f"{tokens} token{'s' if tokens != 1 else ''}, {self._elapsed()}"
+        if answer:
+            self._send(f"Writing answer... {counters}\n\n{answer}", self._node_id)
+        else:
+            self._send(f"Thinking... {counters}\n\n{(thinking + inline)[-2000:]}", self._node_id)
+
+    def show(self, text: str):
+        if self._send:
+            self._send(text, self._node_id)
+
+
+def _log_timing(model: str, last: Any, thinking_tokens: int):
+    """One console line showing where the time went, from Ollama's own measurements."""
+    if last is None or not last.done:
+        return
+    seconds = lambda ns: (ns or 0) / 1e9
+    load, total = seconds(last.load_duration), seconds(last.total_duration)
+    written, writing = last.eval_count or 0, seconds(last.eval_duration)
+    parts = [
+        f"loaded in {load:.1f}s" if load >= 0.5 else "already loaded",
+        f"read {last.prompt_eval_count or 0} prompt tokens in {seconds(last.prompt_eval_duration):.1f}s",
+        f"wrote {written} tokens in {writing:.1f}s" + (f" ({written / writing:.0f}/s)" if writing else "")
+        + (f", {thinking_tokens} of them thinking" if thinking_tokens else ""),
+    ]
+    logging.info(f"[Ollama] {model}: {', '.join(parts)}. Total {total:.1f}s.")
+
+
+def _stream(
+    chunks: Iterator[Any],
+    url: str,
+    request_timeout: int | None,
+    node_id: str | None,
+    model: str,
+    image_count: int,
+    get_text: Callable[[Any], str | None],
+    get_thinking: Callable[[Any], str | None],
+) -> tuple[str, str, Any]:
+    """
+    Consume a streamed Ollama response and return (text, thinking, last_chunk).
+    Honors ComfyUI's cancel between chunks and reports progress on the node and timing in the console.
+    """
+    text, thinking, last, tokens, thinking_tokens = "", "", None, 0, 0
+    status = _NodeStatus(node_id, url, model, image_count)
+    try:
+        for chunk in chunks:
+            last = chunk
+            piece, thought = get_text(chunk) or "", get_thinking(chunk) or ""
+            text += piece
+            thinking += thought
+            tokens += bool(piece or thought)
+            thinking_tokens += bool(thought)
+            comfy.model_management.throw_exception_if_processing_interrupted()
+            status.update(text, thinking, tokens)
+    except (httpx.ConnectError, httpx.ConnectTimeout, ConnectionError) as e:
+        raise RuntimeError(f"Could not connect to Ollama at {url}. Make sure the Ollama server is running and the URL is correct.") from e
+    except httpx.ReadTimeout as e:
+        raise RuntimeError(
+            f"Ollama sent nothing for {request_timeout}s. The model may still be loading or be short on VRAM. "
+            "Raise 'request_timeout' in Ollama Options if it needs more time."
+        ) from e
+    finally:
+        status.stop_waiting()
+        # Closing the stream drops the connection, which makes Ollama stop generating after a cancel or error.
+        close = getattr(chunks, "close", None)
+        if close is not None:
+            close()
+
+    text, inline = _split_inline_thinking(text)
+    thinking = "\n".join(part for part in (thinking, inline) if part)
+
+    status.show(text)
+    _log_timing(model, last, thinking_tokens)
+    if last is not None and last.done_reason == "length" and not text:
+        logging.warning("[Ollama] Generation hit the token limit (num_predict) before producing an answer. "
+                        "Disable 'think' or raise num_predict.")
+    return text, thinking, last
+
+
+def _error_response(e: Exception):
+    return web.json_response({"error": str(e) or type(e).__name__}, status=502)
+
+
+def _version_problem_response():
+    # 'summary' tells the frontend this is a setup problem, shown until dismissed so the command can be copied.
+    return web.json_response({"error": OLLAMA_VERSION_PROBLEM, "summary": "Update the ollama Python package"}, status=500)
+
 
 @PromptServer.instance.routes.post("/ollama/get_models")
 async def get_models_endpoint(request):
     data = await request.json()
 
-    url = data.get("url")
-    client = Client(host=url)
-
-    models = client.list().get('models', [])
+    if OLLAMA_VERSION_PROBLEM:
+        return _version_problem_response()
 
     try:
-        models = [model['model'] for model in models]
-        return web.json_response(models)
+        async with AsyncClient(host=data.get("url"), timeout=5) as client:
+            response = await client.list()
     except Exception as e:
-        models = [model['name'] for model in models]
-        return web.json_response(models)
+        return _error_response(e)
+
+    return web.json_response(sorted((m.model for m in response.models if m.model), key=str.lower))
+
+
+@PromptServer.instance.routes.post("/ollama/unload")
+async def unload_models_endpoint(request):
+    """Unload every model Ollama has in memory, freeing VRAM for ComfyUI."""
+    data = await request.json()
+
+    if OLLAMA_VERSION_PROBLEM:
+        return _version_problem_response()
+
+    try:
+        async with AsyncClient(host=data.get("url"), timeout=30) as client:
+            loaded = [m.model for m in (await client.ps()).models if m.model]
+            for model in loaded:
+                await client.generate(model=model, keep_alive=0)
+    except Exception as e:
+        return _error_response(e)
+
+    return web.json_response(loaded)
 
 class OllamaSaveContext:
     def __init__(self):
@@ -139,38 +423,39 @@ class OllamaOptionsV2:
         seed = random.randint(1, 2 ** 31)
         return {
             "required": {
-                "enable_mirostat": ("BOOLEAN", {"default": False}),
-                "mirostat": ("INT", {"default": 0, "min": 0, "max":2, "step": 1, "tooltip": "Whether to use Mirostat sampling. Mirostat is an algorithm that actively maintains the quality of generated text within a desired range during text generation. (0 = disabled, 1 = Mirostat 1, 2 = Mirostat 2.0)"}),
+                "enable_mirostat": ("BOOLEAN", {"default": False, "tooltip": "No longer supported by Ollama; ignored."}),
+                "mirostat": ("INT", {"default": 0, "min": 0, "max":2, "step": 1, "tooltip": "No longer supported by Ollama; ignored."}),
 
-                "enable_mirostat_eta": ("BOOLEAN", {"default": False}),
-                "mirostat_eta": ("FLOAT", {"default": 0.1, "min": 0, "step": 0.1, "tooltip": "Mirostat's learning rate parameter influences how quickly the algorithm responds to feedback from the generated text."}),
+                "enable_mirostat_eta": ("BOOLEAN", {"default": False, "tooltip": "No longer supported by Ollama; ignored."}),
+                "mirostat_eta": ("FLOAT", {"default": 0.1, "min": 0, "step": 0.1, "tooltip": "No longer supported by Ollama; ignored."}),
 
-                "enable_mirostat_tau": ("BOOLEAN", {"default": False}),
-                "mirostat_tau": ("FLOAT", {"default": 5.0, "min": 0, "step": 0.1, "tooltip": "Mirostat's target entropy parameter controls the balance between coherence and diversity in the generated text."}),
+                "enable_mirostat_tau": ("BOOLEAN", {"default": False, "tooltip": "No longer supported by Ollama; ignored."}),
+                "mirostat_tau": ("FLOAT", {"default": 5.0, "min": 0, "step": 0.1, "tooltip": "No longer supported by Ollama; ignored."}),
 
                 "enable_num_ctx": ("BOOLEAN", {"default": False}),
-                "num_ctx": ("INT", {"default": 2048, "min": 0, "max": 2 ** 31, "step": 1, "tooltip": "Sets the size of the context window used to generate the next token."}),
+                "num_ctx": ("INT", {"default": 8192, "min": 0, "max": 2 ** 31, "step": 1, "tooltip": "Size of the context window in tokens: the prompt, images, thinking and answer together. Leave disabled to let Ollama choose (4k to 256k depending on VRAM). Changing it makes Ollama reload the model."}),
 
                 "enable_repeat_last_n": ("BOOLEAN", {"default": False}),
-                "repeat_last_n": ("INT", {"default": 64, "min": -1, "max": 64, "step": 1, "tooltip": "Sets how far back for the model to look back to prevent repetition. (0 = disabled, -1 = num_ctx)"}),
+                "repeat_last_n": ("INT", {"default": 64, "min": -1, "max": 2 ** 31, "step": 1, "tooltip": "Sets how far back for the model to look back to prevent repetition. (0 = disabled, -1 = num_ctx)"}),
 
                 "enable_repeat_penalty": ("BOOLEAN", {"default": False}),
-                "repeat_penalty": ("FLOAT", {"default": 1.1, "min": 0, "max": 2, "step": 0.05, "tooltip": "Sets how strongly to penalize repetitions. A higher value (e.g., 1.5) will penalize repetitions more strongly, while a lower value (e.g., 0.9) will be more lenient."}),
+                "repeat_penalty": ("FLOAT", {"default": 1.1, "min": 0, "max": 2, "step": 0.05, "tooltip": "Sets how strongly to penalize repetitions. A higher value (e.g., 1.5) will penalize repetitions more strongly, while a lower value (e.g., 0.9) will be more lenient. Ollama's default is 1.0 (off)."}),
 
                 "enable_temperature": ("BOOLEAN", {"default": False}),
                 "temperature": ("FLOAT", {"default": 0.8, "min": -10, "max": 10, "step": 0.05, "tooltip": "Increasing the temperature will make the model answer more creatively."}),
 
-                "enable_seed": ("BOOLEAN", {"default": False}),
-                "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1, "tooltip": "Sets the random number seed to use for generation. Setting this to a specific number will make the model generate the same text for the same prompt."}),
+                "enable_seed": ("BOOLEAN", {"default": False, "tooltip": "Deprecated: use the seed on the Ollama Generate or Ollama Chat node. When enabled here, it overrides that seed."}),
+                # 'fixed': a randomized seed here would change this node's output on every queue and re-run every connected node, even with enable_seed off.
+                "seed": ("INT", {"default": seed, "min": 0, "max": 2 ** 31, "step": 1, "control_after_generate": "fixed", "tooltip": "Deprecated: use the seed on the Ollama Generate or Ollama Chat node. When enabled here, it overrides that seed."}),
 
                 "enable_stop": ("BOOLEAN", {"default": False}),
                 "stop": ("STRING", {"default": "", "multiline": False, "tooltip": "When this pattern is encountered the LLM will stop generating text and return."}),
 
-                "enable_tfs_z": ("BOOLEAN", {"default": False}),
-                "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05}),
+                "enable_tfs_z": ("BOOLEAN", {"default": False, "tooltip": "No longer supported by Ollama; ignored."}),
+                "tfs_z": ("FLOAT", {"default": 1, "min": 1, "max": 1000, "step": 0.05, "tooltip": "No longer supported by Ollama; ignored."}),
 
                 "enable_num_predict": ("BOOLEAN", {"default": False}),
-                "num_predict": ("INT", {"default": -1, "min": -2, "max": 2048, "step": 1, "tooltip": "Maximum number of tokens to predict when generating text. The default -1 means infinite generation."}),
+                "num_predict": ("INT", {"default": -1, "min": -2, "max": 2 ** 31, "step": 1, "tooltip": "Maximum number of tokens to generate, including thinking. The default -1 means no limit. If it's too low for a thinking model, the answer comes back empty."}),
 
                 "enable_top_k": ("BOOLEAN", {"default": False}),
                 "top_k": ("INT", {"default": 40, "min": 0, "max": 100, "step": 1, "tooltip": "Reduces the probability of generating nonsense. A higher value (e.g. 100) will give more diverse answers, while a lower value (e.g. 10) will be more conservative."}),
@@ -183,6 +468,18 @@ class OllamaOptionsV2:
 
                 "debug": ("BOOLEAN", {"default": False, "tooltip": "For debugging purposes of the custom nodes, no effect on ollama api."}),
             },
+            "optional": {
+                "request_timeout": ("INT", {"default": DEFAULT_REQUEST_TIMEOUT, "min": 0, "max": 3600, "step": 1, "tooltip": "Seconds to wait while Ollama sends nothing (loading the model, reading the prompt, or between tokens) before giving up. 0 = wait forever. Not sent to Ollama."}),
+
+                "enable_num_gpu": ("BOOLEAN", {"default": False}),
+                "num_gpu": ("INT", {"default": -1, "min": -1, "max": 999, "step": 1, "tooltip": "How many model layers Ollama puts on the GPU. -1 = automatic, 0 = CPU only. Lower it to leave VRAM for ComfyUI. Changing it makes Ollama reload the model."}),
+
+                "enable_presence_penalty": ("BOOLEAN", {"default": False}),
+                "presence_penalty": ("FLOAT", {"default": 0.0, "min": -2, "max": 10, "step": 0.05, "tooltip": "Lowers the chance of any token that has already appeared, by the same amount however often it appeared. Typical values are 0 to 2."}),
+
+                "enable_frequency_penalty": ("BOOLEAN", {"default": False}),
+                "frequency_penalty": ("FLOAT", {"default": 0.0, "min": -2, "max": 10, "step": 0.05, "tooltip": "Lowers the chance of a token more each time it appears. Typical values are 0 to 1; higher values quickly make the text strange."}),
+            },
         }
 
     RETURN_TYPES = ("OLLAMA_OPTIONS",)
@@ -192,6 +489,10 @@ class OllamaOptionsV2:
     DESCRIPTION = "Various settings for advanced configuration of Ollama inference. See Ollama documentation for more details."
 
     def ollama_options(self, **kargs):
+
+        ignored = [key for key in REMOVED_OPTIONS if kargs.get("enable_" + key)]
+        if ignored:
+            logging.warning(f"[Ollama Options] {', '.join(ignored)} are no longer supported by Ollama and are ignored.")
 
         if kargs['debug']:
             print("--- ollama options v2 dump\n")
@@ -265,7 +566,10 @@ class OllamaGenerateV2:
                 "images": ("IMAGE", {"forceInput": False, "tooltip": "Provide an image or a batch of images for vision tasks. Make sure that the selected model supports vision, otherwise it may hallucinate the response."},),
                 "context": ("OLLAMA_CONTEXT", {"forceInput": False, "tooltip": "Optionally set an existing model context, useful for multi-turn conversations, follow-up questions."},),
                 "meta": ("OLLAMA_META", {"forceInput": False, "tooltip": "Use this input to chain multiple 'Ollama Generate' nodes. In this case the connectivity and options inputs are passed along."},),
-            }
+                "think_level": (THINK_LEVELS, {"default": "auto", "tooltip": "How much the model thinks when 'think' is enabled. 'auto' uses the model's default. Levels only work on models that support them, such as gpt-oss."}),
+                "seed": SEED_INPUT,
+            },
+            "hidden": {"unique_id": "UNIQUE_ID"},
         }
 
     RETURN_TYPES = ("STRING", "STRING", "OLLAMA_CONTEXT", "OLLAMA_META",)
@@ -274,28 +578,10 @@ class OllamaGenerateV2:
     CATEGORY = "Ollama"
     DESCRIPTION = "Text generation with Ollama. Supports vision tasks, multi-turn conversations, and advanced inference options. Connect an Ollama Connectivity node to set the server URL and model."
 
-    def get_request_options(self, options):
-        response = None
+    def ollama_generate_v2(self, system, prompt, think, keep_context, format, context = None, options=None, connectivity=None, images=None, meta=None, think_level="auto", seed=None, unique_id=None):
 
-        if options is None:
-            return response
-
-        enablers = ['enable_mirostat', 'enable_mirostat_eta',
-                    'enable_mirostat_tau', 'enable_mirostat_eta',
-                    'enable_num_ctx', 'enable_repeat_last_n', 'enable_repeat_penalty',
-                    'enable_temperature', 'enable_seed', 'enable_stop', 'enable_tfs_z', 'enable_num_predict',
-                    'enable_top_k', 'enable_top_p', 'enable_min_p']
-
-        for enabler in enablers:
-            if options[enabler]:
-                if response is None:
-                    response = {}
-                key = enabler.replace("enable_", "")
-                response[key] = options[key]
-
-        return response
-
-    def ollama_generate_v2(self, system, prompt, think, keep_context, format, context = None, options=None, connectivity=None, images=None, meta=None):
+        if OLLAMA_VERSION_PROBLEM:
+            raise RuntimeError(OLLAMA_VERSION_PROBLEM)
 
         if connectivity is None and meta is None:
             raise Exception("Required input connectivity or meta.")
@@ -304,6 +590,7 @@ class OllamaGenerateV2:
             raise Exception("Required input connectivity or connectivity in meta.")
 
         if meta is not None:
+            meta = dict(meta) # don't modify the upstream node's cached output
             if connectivity is not None: # bypass the current meta connectivity
                 meta["connectivity"] = connectivity
             if options is not None: # bypass the current meta options
@@ -313,9 +600,10 @@ class OllamaGenerateV2:
 
         url = meta['connectivity']['url']
         model = meta['connectivity']['model']
-        client = Client(host=url)
+        options = meta.get('options')
+        request_timeout = _request_timeout(options)
 
-        debug_print = True if meta['options'] is not None and meta['options']['debug'] else False
+        debug_print = True if options is not None and options['debug'] else False
 
         if format == "text":
             format = ''
@@ -330,22 +618,14 @@ class OllamaGenerateV2:
         keep_alive_unit =  'm' if meta['connectivity']['keep_alive_unit'] == "minutes" else 'h'
         request_keep_alive = str(meta['connectivity']['keep_alive']) + keep_alive_unit
 
-        request_options = self.get_request_options(options)
+        request_options = _with_seed(_filter_enabled_options(options), seed)
+        request_think = _resolve_think(think, think_level)
 
-        images_b64 = None
-        if images is not None:
-            images_b64 = []
-            for (batch_number, image) in enumerate(images):
-                i = 255. * image.cpu().numpy()
-                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-                buffered = BytesIO()
-                img.save(buffered, format="PNG")
-                img_bytes = base64.b64encode(buffered.getvalue())
-                images_b64.append(str(img_bytes, 'utf-8'))
+        images_b64 = _images_to_b64(images)
 
         if debug_print:
             print(f"""
---- ollama generate v2 request: 
+--- ollama generate v2 request:
 
 url: {url}
 model: {model}
@@ -353,39 +633,51 @@ system: {system}
 prompt: {prompt}
 images: {0 if images_b64 is None else len(images_b64)}
 context: {context}
-think: {think}
+think: {request_think}
 options: {request_options}
 keep alive: {request_keep_alive}
 format: {format}
+request timeout: {request_timeout}
 ---------------------------------------------------------
 """)
 
-        response = client.generate(
-            model=model,
-            system=system,
-            prompt=prompt,
-            images=images_b64,
-            context=context,
-            think=think,
-            options=request_options,
-            keep_alive= request_keep_alive,
-            format=format,
-        )
+        with _make_client(url, request_timeout) as client:
+            ollama_response_text, ollama_response_thinking, last = _stream(
+                client.generate(
+                    model=model,
+                    system=system,
+                    prompt=prompt,
+                    images=images_b64,
+                    context=context,
+                    think=request_think,
+                    options=request_options,
+                    keep_alive= request_keep_alive,
+                    format=format,
+                    stream=True,
+                ),
+                url, request_timeout, unique_id, model, len(images_b64 or []),
+                get_text=lambda chunk: chunk.response,
+                get_thinking=lambda chunk: chunk.thinking,
+            )
 
         if debug_print:
             print("\n--- ollama generate v2 response:")
-            pprint(response)
+            print(ollama_response_text)
+            pprint(last)
             print("---------------------------------------------------------")
 
-        ollama_response_text = response['response']
-        ollama_response_thinking = response['thinking'] if think else None
+        if not think:
+            ollama_response_thinking = None
 
-        if keep_context:
-            self.saved_context = response["context"]
+        # Ollama doesn't always return a context (issue #94)
+        response_context = getattr(last, "context", None)
+
+        if keep_context and response_context is not None:
+            self.saved_context = response_context
             if debug_print:
                 print("saving context to node memory.")
 
-        return ollama_response_text, ollama_response_thinking, response['context'], meta,
+        return ollama_response_text, ollama_response_thinking, response_context, meta,
 
 
 class OllamaChat:
@@ -461,16 +753,31 @@ class OllamaChat:
                     "OLLAMA_HISTORY",
                     {
                         "forceInput": False,
-                        "tooltip": "Optionally set an existing model history, useful for multi-turn conversations, follow-up questions.",
+                        "tooltip": "Continue the conversation from another Ollama Chat node's history output, for follow-up questions in the same run.",
                     },
                 ),
                 "reset_session": (
                     "BOOLEAN",
                     {
                         "default": False,
-                        "tooltip": "Clear the conversation history. WARNING: If using shared history, this will affect all nodes using the same history ID.",
+                        "tooltip": "Clear this node's remembered history (see 'remember_history') before running.",
                     },
                 ),
+                "remember_history": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": "Keep this node's conversation across queue runs until ComfyUI restarts or 'reset_session' is used. Off = every run starts a new conversation, which keeps prompts short and fast. Ignored when 'history' is connected.",
+                    },
+                ),
+                "think_level": (
+                    THINK_LEVELS,
+                    {
+                        "default": "auto",
+                        "tooltip": "How much the model thinks when 'think' is enabled. 'auto' uses the model's default. Levels only work on models that support them, such as gpt-oss.",
+                    },
+                ),
+                "seed": SEED_INPUT,
             },
             "hidden": {"unique_id": "UNIQUE_ID"},
         }
@@ -502,22 +809,28 @@ class OllamaChat:
         connectivity: dict[str, Any] | None = None,
         images: list[torch.Tensor] | None = None,
         meta: dict[str, Any] | None = None,
-        history: str | None = None,
+        history: list[dict] | None = None,
         reset_session: bool = False,
-    ) -> tuple[str | None, str | None, dict[str, Any], str | None]:
+        remember_history: bool = False,
+        think_level: str = "auto",
+        seed: int | None = None,
+    ) -> tuple[str | None, str | None, dict[str, Any], list[dict]]:
+
+        if OLLAMA_VERSION_PROBLEM:
+            raise RuntimeError(OLLAMA_VERSION_PROBLEM)
 
         if meta is None:
             if connectivity is None:
                 raise ValueError("Either 'connectivity' or 'meta' must be provided.")
             meta = {}
+        else:
+            meta = dict(meta)  # don't modify the upstream node's cached output
 
         # Update with provided values (override)
         if connectivity is not None:
             meta["connectivity"] = connectivity
         if options is not None:
             meta["options"] = options
-        else:
-            meta["options"] = None
 
         # Final validation
         if "connectivity" not in meta or meta["connectivity"] is None:
@@ -525,11 +838,10 @@ class OllamaChat:
 
         url = meta["connectivity"]["url"]
         model = meta["connectivity"]["model"]
-        client = Client(host=url)
+        options = meta.get("options")
+        request_timeout = _request_timeout(options)
 
-        debug_print = (
-            True if meta["options"] is not None and meta["options"]["debug"] else False
-        )
+        debug_print = True if options is not None and options["debug"] else False
 
         ollama_format: Literal["", "json"] | JsonSchemaValue | None = None
 
@@ -543,117 +855,103 @@ class OllamaChat:
         )
         request_keep_alive = str(meta["connectivity"]["keep_alive"]) + keep_alive_unit
 
-        # 4. use the shared helper instead of self.get_request_options
-        request_options = _filter_enabled_options(options)
+        request_options = _with_seed(_filter_enabled_options(options), seed)
+        request_think = _resolve_think(think, think_level)
 
-        images_b64: list[str] | None = None
-        if images is not None:
-            images_b64 = []
-            for batch_number, image in enumerate(images):
-                i = 255.0 * image.cpu().numpy()
-                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-                buffered = BytesIO()
-                img.save(buffered, format="PNG")
-                img_bytes = base64.b64encode(buffered.getvalue()).decode("utf-8")
-                images_b64.append(img_bytes)
+        images_b64 = _images_to_b64(images)
 
         if debug_print:
             print(
                 f"""
---- ollama chat request: 
+--- ollama chat request:
 
 url: {url}
 model: {model}
 system: {system}
 prompt: {prompt}
 images: {0 if images_b64 is None else len(images_b64)}
-think: {think}
+think: {request_think}
 options: {request_options}
 keep alive: {request_keep_alive}
 format: {format}
+request timeout: {request_timeout}
 ---------------------------------------------------------
 """
             )
 
-        # Determinate which session to use
-        session_key = history if history is not None else unique_id
-
-        # If reset_session is True, reset the session
         if reset_session:
-            CHAT_SESSIONS[session_key] = ChatSession()
+            CHAT_SESSIONS.pop(unique_id, None)
             if debug_print:
-                print(f"Session {session_key} has been reset")
+                print(f"Session {unique_id} has been reset")
 
-        # If the session doesn't exist, create it
-        if session_key not in CHAT_SESSIONS:
-            CHAT_SESSIONS[session_key] = ChatSession()
-
-        session = CHAT_SESSIONS[session_key]
-
-        # Update history for return
-        history = session_key
+        # Pick the conversation to continue: a chained node's history, this node's
+        # remembered history, or a new conversation.
+        if history is not None:
+            messages = copy.deepcopy(history)
+        elif remember_history:
+            messages = copy.deepcopy(CHAT_SESSIONS.get(unique_id, []))
+        else:
+            messages = []
 
         # If there is a system prompt, replace it or add it to the beginning
         if system:
-            if session.messages and session.messages[0].get("role") == "system":
-                session.messages[0] = {"role": "system", "content": system}
+            if messages and messages[0].get("role") == "system":
+                messages[0] = {"role": "system", "content": system}
             else:
-                session.messages.insert(0, {"role": "system", "content": system})
-
-        # Construct the user message for history
-        user_message_for_history: dict[str, Any] = {
-            "role": "user",
-            "content": prompt,
-        }
+                messages.insert(0, {"role": "system", "content": system})
 
         # Add the user message to the history (without images)
-        session.messages.append(user_message_for_history)
+        messages.append({"role": "user", "content": prompt})
 
         if debug_print:
             print("\n--- ollama chat session:")
-            for message in session.messages:
+            for message in messages:
                 pprint(f"{message['role']}> {message['content'][:50]}...")
-                if "images" in message:
-                    for image in message["images"]:
-                        pprint(f"Image: {image[:50]}...")
             print("---------------------------------------------------------")
 
         # Construct the messages for the API call (with images)
-        messages_for_api = copy.deepcopy(session.messages)
+        messages_for_api = copy.deepcopy(messages)
 
         # If there are images, modify the last user message for the API call
         if images_b64 is not None:
             messages_for_api[-1]["images"] = images_b64
 
-        response = client.chat(
-            model=model,
-            messages=messages_for_api,
-            options=request_options,
-            keep_alive=request_keep_alive,
-            format=ollama_format,
-        )
+        with _make_client(url, request_timeout) as client:
+            ollama_response_text, ollama_response_thinking, last = _stream(
+                client.chat(
+                    model=model,
+                    messages=messages_for_api,
+                    think=request_think,
+                    options=request_options,
+                    keep_alive=request_keep_alive,
+                    format=ollama_format,
+                    stream=True,
+                ),
+                url, request_timeout, unique_id, model, len(images_b64 or []),
+                get_text=lambda chunk: chunk.message.content,
+                get_thinking=lambda chunk: chunk.message.thinking,
+            )
 
         if debug_print:
             print("\n--- ollama chat response:")
-            pprint(response)
+            print(ollama_response_text)
+            pprint(last)
             print("---------------------------------------------------------")
 
-        ollama_response_text = response.message.content
-        ollama_response_thinking = response.message.thinking if think else None
+        if not think:
+            ollama_response_thinking = None
 
         # Add the assistant message to the history
-        session.messages.append(
-            {
-                "role": "assistant",
-                "content": ollama_response_text,
-            }
-        )
+        messages.append({"role": "assistant", "content": ollama_response_text})
+
+        if remember_history and history is None:
+            CHAT_SESSIONS[unique_id] = messages
 
         return (
             ollama_response_text,
             ollama_response_thinking,
             meta,
-            history,
+            messages,
         )
 
 
@@ -667,10 +965,10 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "OllamaOptionsV2": "Ollama Options",
-    "OllamaConnectivityV2": "Ollama Connectivity",
-    "OllamaGenerateV2": "Ollama Generate",
-    "OllamaSaveContext": "Ollama Save Context",
-    "OllamaLoadContext": "Ollama Load Context",
-    "OllamaChat": "Ollama Chat",
+    "OllamaOptionsV2": "🦙 Ollama Options",
+    "OllamaConnectivityV2": "🦙 Ollama Connectivity",
+    "OllamaGenerateV2": "🦙 Ollama Generate",
+    "OllamaSaveContext": "🦙 Ollama Save Context",
+    "OllamaLoadContext": "🦙 Ollama Load Context",
+    "OllamaChat": "🦙 Ollama Chat",
 }

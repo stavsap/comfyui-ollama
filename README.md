@@ -15,7 +15,7 @@ To use this properly, you would need a running Ollama server reachable from the 
 ### 1. Install ollama server on the desired host
 
 <a href="https://ollama.com/" target="_blank">
-  <img src="https://img.shields.io/badge/v0.5.7-green.svg?style=for-the-badge&labelColor=gray&label=Ollama&color=blue" alt=""/>
+  <img src="https://img.shields.io/badge/v0.40.3-green.svg?style=for-the-badge&labelColor=gray&label=Ollama&color=blue" alt=""/>
 </a>
 
 <details>
@@ -99,6 +99,14 @@ Inputs:
 -   **context** (optional), a context from other OllamaConnectivity
 -   **meta** (optional), passing metadata of the OllamaConnectivity and OllamaOptions from other OllamaGenerate node.
 
+Settings:
+
+-   **think**: let the model reason before answering. The reasoning goes to the `thinking` output. Many current models think by default, so turning this off makes them answer much faster. Ollama separates the reasoning from the answer. If a model writes it inside `<think>` tags that Ollama doesn't recognize, the node moves it out of `result` too.
+-   **think_level**: `auto` uses the model's default. `low`/`medium`/`high` only work on models that support thinking levels, such as gpt-oss.
+-   **seed**: the random seed for the answer, with ComfyUI's usual **control after generate**. `fixed` (the default) reuses the previous result while nothing changes. `randomize` gives a fresh answer on every run. The same seed and inputs usually give the same answer.
+
+While it runs, the node shows what Ollama is doing: loading the model, reading the prompt, thinking or writing the answer, with a token count and the elapsed time. Then it shows the answer. ComfyUI's cancel button stops it. Each run also logs one line to the ComfyUI console with the time spent loading, reading the prompt and generating, which helps to find out why a run was slow.
+
 **Notes:**
 
 -   For this node to be operational, **OllamaConnectivity** or **meta** must be inputted!.
@@ -110,9 +118,10 @@ A node for **conversational interaction** using the dedicated Ollama chat endpoi
 
 -   **Functionality:** Unlike `OllamaGenerate`, this node is designed specifically for multi-turn conversations and cloud models with your Ollama public key (see the Configuration section).
 -   **Key Features:**
-    -   Conversation history is handled natively within the node instance.
-    -   Dedicated history outputs for **chaining multiple chat nodes**.
-    -   Option to **reset** the current conversation history on demand.
+    -   Each run starts a new conversation by default, which keeps prompts short and fast.
+    -   Turn on **remember_history** to keep the conversation across runs (until ComfyUI restarts). **reset_session** clears it.
+    -   The **history** output carries the conversation, for **chaining multiple chat nodes** in the same run.
+    -   Same **think**, **think_level** and **seed** settings as OllamaGenerate.
 
 Inputs:
 
@@ -121,18 +130,21 @@ Inputs:
 -   **images** (optional)
 -   **meta** (optional), passing metadata of the OllamaConnectivity and
     OllamaOptions from other OllamaChat node.
--   **history** (optional), passing history ID from other OllamaChat node.
+-   **history** (optional), the conversation from another OllamaChat node's history output.
 
 Outputs:
 
 -   **result**: The generated text
 -   **thinking**: The thinking text
 -   **meta**: The metadata to pass to the next OllamaChat node
--   **history**: The history ID to pass to the next OllamaChat node
+-   **history**: The conversation so far, to pass to the next OllamaChat node
 
 ### OllamaConnectivity
 
-A node responsible only fot the connectivity to the ollama server
+A node responsible only for the connectivity to the ollama server.
+
+-   **🔄 Reconnect** reloads the model list, for example after installing a new model.
+-   **🧹 Unload models** unloads every model Ollama has in memory, so ComfyUI gets the VRAM back. Setting **keep_alive** to 0 does this automatically after each run.
 
 ### OllamaOptions
 
@@ -143,6 +155,27 @@ For an option to take effect, each option have also `enable/disable`, enabled op
 Ollama API options can be found in [this table](https://github.com/ollama/ollama/blob/main/docs/modelfile.md#valid-parameters-and-values).
 
 **Note**: There is an additional option `debug` that enables debug print in the cli, its not part of ollama api.
+
+**request_timeout**: seconds to wait while Ollama sends nothing (loading the model, reading the prompt, or between tokens) before the node fails. Default 300, 0 = no limit. Without an Options node the default applies.
+
+**num_gpu**: how many model layers Ollama puts on the GPU (-1 = automatic, 0 = CPU only). Lower it to leave VRAM for ComfyUI.
+
+**presence_penalty** and **frequency_penalty**: discourage repeating words. Presence lowers the chance of any word already used by the same amount; frequency lowers it more each time a word repeats.
+
+**num_ctx**: leave it disabled to let Ollama choose the context size (4k to 256k depending on VRAM). Setting it too low cuts off long prompts, images and thinking.
+
+Changing `num_ctx` or `num_gpu`, between runs or between nodes, makes Ollama reload the model, which is slow.
+
+**seed**: deprecated here, use the seed on OllamaGenerate or OllamaChat instead. If it's enabled on this node, it overrides theirs. In older workflows, set this seed's control to `fixed`: when it's `randomize`, every connected node re-runs on every queue, even with the seed disabled.
+
+`mirostat`, `mirostat_eta`, `mirostat_tau` and `tfs_z` are no longer supported by Ollama. They stay on the node so older workflows still load, but they're ignored.
+
+## Troubleshooting
+
+-   **Slow answers**: turn off **think**. Many models think by default, which can take much longer than the answer itself.
+-   **"Ollama sent nothing for ... s"**: the model is still loading or is short on VRAM. Raise **request_timeout**, use a smaller model, or free VRAM with **Unload models**.
+-   **"Could not connect to Ollama"**: check that Ollama is running and that the URL in OllamaConnectivity is correct.
+-   **"comfyui-ollama needs version 0.6.2 or newer of the 'ollama' Python package"**: run the command shown in the message, then restart ComfyUI. This updates the Python library ComfyUI uses to talk to Ollama, not the Ollama app.
 
 ### Deprecated nodes
 

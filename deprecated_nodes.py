@@ -277,7 +277,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "OllamaVision": "Ollama Vision (deprecated)",
-    "OllamaGenerate": "Ollama Generate (deprecated)",
-    "OllamaGenerateAdvance": "Ollama Generate Advance (deprecated)",
+    "OllamaVision": "🦙 Ollama Vision (deprecated)",
+    "OllamaGenerate": "🦙 Ollama Generate (deprecated)",
+    "OllamaGenerateAdvance": "🦙 Ollama Generate Advance (deprecated)",
 }
