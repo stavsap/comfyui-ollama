@@ -45,7 +45,7 @@ app.registerExtension({
         };
 
         const updateModels = async () => {
-          refreshButtonWidget.name = "⏳ Fetching...";
+          refreshButtonWidget.label = "⏳ Fetching...";
           const url = urlWidget.value;
 
           let models = [];
@@ -59,7 +59,7 @@ app.registerExtension({
               detail: "Make sure Ollama server is running",
               life: 5000,
             });
-            refreshButtonWidget.name = "🔄 Reconnect";
+            refreshButtonWidget.label = "🔄 Reconnect";
             this.setDirtyCanvas(true);
             return;
           }
@@ -76,7 +76,7 @@ app.registerExtension({
             modelWidget.value = models[0]; // set first as default.
           }
 
-          refreshButtonWidget.name = "🔄 Reconnect";
+          refreshButtonWidget.label = "🔄 Reconnect";
           this.setDirtyCanvas(true);
           console.debug("Updated modelWidget.value:", modelWidget.value);
         };
